@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "../styles/Clientes.module.css";
 import axios from "axios";
 
 export default function Clientes() {
+  const navigate = useNavigate();
   const [clientes, setClientes] = useState([]);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [clienteEditando, setClienteEditando] = useState(null);
+  const [mensaje, setMensaje] = useState({ texto: "", tipo: "" });
   const [formData, setFormData] = useState({
     nombre: "",
     email: "",
@@ -28,7 +31,15 @@ export default function Clientes() {
       setClientes(res.data);
     } catch (error) {
       console.error("Error al obtener clientes:", error);
+      mostrarMensaje("Error al cargar los clientes", "error");
     }
+  };
+
+  const mostrarMensaje = (texto, tipo) => {
+    setMensaje({ texto, tipo });
+    setTimeout(() => {
+      setMensaje({ texto: "", tipo: "" });
+    }, 4000);
   };
 
   const validarFormulario = () => {
@@ -39,13 +50,20 @@ export default function Clientes() {
       nuevosErrores.nombre = "El nombre es requerido";
     }
 
-    // Validar email (formato)
+    // Validar dirección (al menos un campo requerido)
+    if (!formData.calle && !formData.ciudad) {
+      nuevosErrores.direccion = "Debe completar al menos la calle o la ciudad";
+    }
+
+    // Validar email (formato si se proporciona)
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       nuevosErrores.email = "Formato de email inválido";
     }
 
-    // Validar teléfono (solo números, guiones y espacios)
-    if (formData.telefono && !/^[\d\s\-\+\(\)]+$/.test(formData.telefono)) {
+    // Validar teléfono (requerido)
+    if (!formData.telefono.trim()) {
+      nuevosErrores.telefono = "El teléfono es requerido";
+    } else if (!/^[\d\s\-\+\(\)]+$/.test(formData.telefono)) {
       nuevosErrores.telefono = "El teléfono solo puede contener números, espacios, guiones y paréntesis";
     }
 
@@ -67,6 +85,14 @@ export default function Clientes() {
         [name]: ""
       }));
     }
+    
+    // Limpiar error de dirección si se completa algún campo
+    if ((name === 'calle' || name === 'ciudad') && value.trim() && errores.direccion) {
+      setErrores(prev => ({
+        ...prev,
+        direccion: ""
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -77,16 +103,32 @@ export default function Clientes() {
     }
 
     try {
+      let clienteCreado;
       if (clienteEditando) {
         await axios.put(`http://localhost:4000/api/clientes/${clienteEditando.id}`, formData);
+        mostrarMensaje("Cliente actualizado con éxito", "success");
       } else {
-        await axios.post("http://localhost:4000/api/clientes", formData);
+        const response = await axios.post("http://localhost:4000/api/clientes", formData);
+        clienteCreado = response.data;
+        mostrarMensaje("Cliente creado con éxito", "success");
       }
       
+      // Cerrar formulario automáticamente
       resetFormulario();
-      fetchClientes();
+      
+      // Actualizar lista de clientes
+      await fetchClientes();
+      
+      // Si es un cliente nuevo, redirigir a presupuestos después de un breve delay
+      if (clienteCreado && clienteCreado.id) {
+        setTimeout(() => {
+          navigate(`/presupuestos/${clienteCreado.id}`);
+        }, 1500);
+      }
+      
     } catch (error) {
       console.error("Error al guardar cliente:", error);
+      mostrarMensaje("Error al guardar el cliente", "error");
     }
   };
 
@@ -109,11 +151,18 @@ export default function Clientes() {
     if (window.confirm("¿Estás seguro de que deseas eliminar este cliente?")) {
       try {
         await axios.delete(`http://localhost:4000/api/clientes/${id}`);
-        fetchClientes();
+        mostrarMensaje("Cliente eliminado correctamente", "success");
+        // Actualizar lista automáticamente
+        await fetchClientes();
       } catch (error) {
         console.error("Error al eliminar cliente:", error);
+        mostrarMensaje("Error al eliminar el cliente", "error");
       }
     }
+  };
+
+  const handleIrAPresupuesto = (clienteId) => {
+    navigate(`/presupuestos/${clienteId}`);
   };
 
   const resetFormulario = () => {
@@ -144,6 +193,13 @@ export default function Clientes() {
 
   return (
     <div className={styles.container}>
+      {/* Mensaje de confirmación/error */}
+      {mensaje.texto && (
+        <div className={`${styles.mensaje} ${styles[mensaje.tipo]}`}>
+          {mensaje.texto}
+        </div>
+      )}
+
       <div className={styles.header}>
         <h2>Gestión de Clientes</h2>
         <button 
@@ -179,6 +235,7 @@ export default function Clientes() {
                     value={formData.nombre}
                     onChange={handleInputChange}
                     className={errores.nombre ? styles.error : ""}
+                    required
                   />
                   {errores.nombre && <span className={styles.mensajeError}>{errores.nombre}</span>}
                 </div>
@@ -200,13 +257,14 @@ export default function Clientes() {
                     {errores.email && <span className={styles.mensajeError}>{errores.email}</span>}
                   </div>
                   <div className={styles.campo}>
-                    <label>Teléfono</label>
+                    <label>Teléfono *</label>
                     <input
                       type="text"
                       name="telefono"
                       value={formData.telefono}
                       onChange={handleInputChange}
                       className={errores.telefono ? styles.error : ""}
+                      required
                     />
                     {errores.telefono && <span className={styles.mensajeError}>{errores.telefono}</span>}
                   </div>
@@ -215,7 +273,8 @@ export default function Clientes() {
 
               {/* Dirección */}
               <div className={styles.seccion}>
-                <h4>Dirección</h4>
+                <h4>Dirección *</h4>
+                {errores.direccion && <span className={styles.mensajeError}>{errores.direccion}</span>}
                 <div className={styles.camposGrupo}>
                   <div className={styles.campo}>
                     <label>Calle</label>
@@ -224,6 +283,7 @@ export default function Clientes() {
                       name="calle"
                       value={formData.calle}
                       onChange={handleInputChange}
+                      className={errores.direccion ? styles.error : ""}
                     />
                   </div>
                   <div className={styles.campo}>
@@ -244,6 +304,7 @@ export default function Clientes() {
                       name="ciudad"
                       value={formData.ciudad}
                       onChange={handleInputChange}
+                      className={errores.direccion ? styles.error : ""}
                     />
                   </div>
                   <div className={styles.campo}>
@@ -302,6 +363,13 @@ export default function Clientes() {
                 </div>
               </div>
               <div className={styles.acciones}>
+                <button 
+                  onClick={() => handleIrAPresupuesto(cliente.id)}
+                  className={styles.btnPresupuesto}
+                  title="Ver presupuestos"
+                >
+                  📋 Presupuesto
+                </button>
                 <button 
                   onClick={() => handleEditar(cliente)}
                   className={styles.btnEditar}

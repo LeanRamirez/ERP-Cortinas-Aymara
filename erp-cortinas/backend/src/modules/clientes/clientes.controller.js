@@ -1,4 +1,4 @@
-import { obtenerClientes, guardarCliente, actualizarCliente, eliminarCliente } from "./clientes.service.js";
+import { obtenerClientes, obtenerClientePorId, guardarCliente, actualizarCliente, eliminarCliente } from "./clientes.service.js";
 
 export const getClientes = async (req, res) => {
   try {
@@ -6,6 +6,19 @@ export const getClientes = async (req, res) => {
     res.json(clientes);
   } catch (err) {
     res.status(500).json({ error: "Error al obtener clientes" });
+  }
+};
+
+export const getClientePorId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cliente = await obtenerClientePorId(parseInt(id));
+    if (!cliente) {
+      return res.status(404).json({ error: "Cliente no encontrado" });
+    }
+    res.json(cliente);
+  } catch (err) {
+    res.status(500).json({ error: "Error al obtener cliente" });
   }
 };
 
