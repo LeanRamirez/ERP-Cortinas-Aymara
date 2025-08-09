@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import styles from "../styles/Presupuestos.module.css";
 import axios from "axios";
+import FormularioPresupuesto from "../components/FormularioPresupuesto";
 
 export default function Presupuestos() {
   const { clienteId } = useParams();
@@ -12,14 +13,7 @@ export default function Presupuestos() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [presupuestoEditando, setPresupuestoEditando] = useState(null);
   const [mensaje, setMensaje] = useState({ texto: "", tipo: "" });
-  const [formData, setFormData] = useState({
-    descripcion: "",
-    valor: "",
-    estado: "pendiente"
-  });
-  const [errores, setErrores] = useState({});
   const [loading, setLoading] = useState(true);
-  const [vistaActual, setVistaActual] = useState(clienteId ? 'cliente' : 'todos');
 
   useEffect(() => {
     if (clienteId) {
@@ -71,48 +65,15 @@ export default function Presupuestos() {
     }, 4000);
   };
 
-  const validarFormulario = () => {
-    const nuevosErrores = {};
-
-    if (!formData.descripcion.trim()) {
-      nuevosErrores.descripcion = "La descripción es requerida";
-    }
-
-    if (!formData.valor || isNaN(formData.valor) || parseFloat(formData.valor) <= 0) {
-      nuevosErrores.valor = "El valor debe ser un número mayor a 0";
-    }
-
-    setErrores(nuevosErrores);
-    return Object.keys(nuevosErrores).length === 0;
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    if (errores[name]) {
-      setErrores(prev => ({
-        ...prev,
-        [name]: ""
-      }));
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validarFormulario()) {
-      return;
-    }
-
+  const handleFormularioSubmit = async (dataToSubmit) => {
     try {
       const dataToSend = {
-        descripcion: formData.descripcion,
-        valor: parseFloat(formData.valor),
-        estado: formData.estado,
+        descripcion: dataToSubmit.descripcion,
+        valor: dataToSubmit.valor,
+        cantidad: dataToSubmit.cantidad,
+        precioUnitario: dataToSubmit.precioUnitario,
+        precioTotal: dataToSubmit.precioTotal,
+        estado: dataToSubmit.estado,
         ...(clienteId && { clienteId: parseInt(clienteId) })
       };
 
@@ -128,7 +89,7 @@ export default function Presupuestos() {
         mostrarMensaje("Presupuesto creado con éxito", "success");
       }
       
-      resetFormulario();
+      handleFormularioCancel();
       
       // Actualizar lista según la vista actual
       if (clienteId) {
@@ -143,13 +104,20 @@ export default function Presupuestos() {
     }
   };
 
+  const handleFormularioCancel = () => {
+    setPresupuestoEditando(null);
+    setMostrarFormulario(false);
+  };
+
   const handleEditar = (presupuesto) => {
-    setPresupuestoEditando(presupuesto);
-    setFormData({
-      descripcion: presupuesto.descripcion || "",
-      valor: presupuesto.valor || "",
-      estado: presupuesto.estado || "pendiente"
-    });
+    // Convertir el presupuesto existente al formato esperado por el componente
+    const presupuestoParaEditar = {
+      ...presupuesto,
+      cantidad: presupuesto.cantidad || 1,
+      precioUnitario: presupuesto.precioUnitario || presupuesto.valor || 0
+    };
+    
+    setPresupuestoEditando(presupuestoParaEditar);
     setMostrarFormulario(true);
   };
 
@@ -172,17 +140,6 @@ export default function Presupuestos() {
     }
   };
 
-  const resetFormulario = () => {
-    setFormData({
-      descripcion: "",
-      valor: "",
-      estado: "pendiente"
-    });
-    setPresupuestoEditando(null);
-    setMostrarFormulario(false);
-    setErrores({});
-  };
-
   const formatearFecha = (fecha) => {
     return new Date(fecha).toLocaleDateString('es-ES', {
       year: 'numeric',
@@ -192,9 +149,9 @@ export default function Presupuestos() {
   };
 
   const formatearValor = (valor) => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'EUR'
+      currency: 'USD'
     }).format(valor);
   };
 
@@ -262,81 +219,12 @@ export default function Presupuestos() {
         )}
       </div>
 
-      {mostrarFormulario && (
-        <div className={styles.modal}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <h3>{presupuestoEditando ? "Editar Presupuesto" : "Nuevo Presupuesto"}</h3>
-              <button 
-                className={styles.btnCerrar}
-                onClick={resetFormulario}
-              >
-                ×
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className={styles.formulario}>
-              <div className={styles.campo}>
-                <label>Descripción del Trabajo *</label>
-                <textarea
-                  name="descripcion"
-                  value={formData.descripcion}
-                  onChange={handleInputChange}
-                  rows="4"
-                  className={errores.descripcion ? styles.error : ""}
-                  placeholder="Describe el trabajo a realizar..."
-                  required
-                />
-                {errores.descripcion && <span className={styles.mensajeError}>{errores.descripcion}</span>}
-              </div>
-
-              <div className={styles.camposGrupo}>
-                <div className={styles.campo}>
-                  <label>Valor del Presupuesto ($) *</label>
-                  <input
-                    type="number"
-                    name="valor"
-                    value={formData.valor}
-                    onChange={handleInputChange}
-                    min="0"
-                    step="0.01"
-                    className={errores.valor ? styles.error : ""}
-                    placeholder="0.00"
-                    required
-                  />
-                  {errores.valor && <span className={styles.mensajeError}>{errores.valor}</span>}
-                </div>
-                <div className={styles.campo}>
-                  <label>Estado</label>
-                  <select
-                    name="estado"
-                    value={formData.estado}
-                    onChange={handleInputChange}
-                  >
-                    <option value="pendiente">Pendiente</option>
-                    <option value="en_revision">En Revisión</option>
-                    <option value="aprobado">Aprobado</option>
-                    <option value="rechazado">Rechazado</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className={styles.botonesFormulario}>
-                <button 
-                  type="button" 
-                  onClick={resetFormulario}
-                  className={styles.btnCancelar}
-                >
-                  Cancelar
-                </button>
-                <button type="submit" className={styles.btnGuardar}>
-                  {presupuestoEditando ? "Actualizar" : "Crear"} Presupuesto
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <FormularioPresupuesto
+        presupuesto={presupuestoEditando}
+        onSubmit={handleFormularioSubmit}
+        onCancel={handleFormularioCancel}
+        isVisible={mostrarFormulario}
+      />
 
       <div className={styles.listaPresupuestos}>
         {presupuestosAMostrar.length === 0 ? (
@@ -372,8 +260,14 @@ export default function Presupuestos() {
                 )}
                 
                 <div className={styles.detalles}>
+                  {presupuesto.cantidad && presupuesto.precioUnitario && (
+                    <div className={styles.detallePresupuesto}>
+                      <p><strong>Cantidad:</strong> {presupuesto.cantidad}</p>
+                      <p><strong>Precio Unitario:</strong> {formatearValor(presupuesto.precioUnitario)}</p>
+                    </div>
+                  )}
                   <p className={styles.valor}>
-                    <strong>Valor:</strong> {formatearValor(presupuesto.valor)}
+                    <strong>Valor Total:</strong> {formatearValor(presupuesto.valor)}
                   </p>
                   <p className={styles.fecha}>
                     <strong>Creado:</strong> {formatearFecha(presupuesto.createdAt)}

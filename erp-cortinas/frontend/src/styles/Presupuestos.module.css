@@ -421,7 +421,21 @@
 }
 
 .detalles {
-  margin-bottom: 15px;
+  margin-top: 12px;
+}
+
+.detallePresupuesto {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 8px;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.detallePresupuesto p {
+  margin: 0;
+  font-size: 0.875rem;
 }
 
 .detalles p {
