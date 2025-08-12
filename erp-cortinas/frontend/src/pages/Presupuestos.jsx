@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import styles from "../styles/Presupuestos.module.css";
 import axios from "axios";
 import FormularioPresupuesto from "../components/FormularioPresupuesto";
+import BotonAprobarPresupuesto from "../components/BotonAprobarPresupuesto";
 
 export default function Presupuestos() {
   const { clienteId } = useParams();
@@ -137,6 +138,23 @@ export default function Presupuestos() {
         console.error("Error al eliminar presupuesto:", error);
         mostrarMensaje("Error al eliminar el presupuesto", "error");
       }
+    }
+  };
+
+  const handleVentaCreada = (venta) => {
+    mostrarMensaje(`¡Venta creada exitosamente! Venta #${venta.id}`, "success");
+  };
+
+  const handlePresupuestoActualizado = (presupuestoActualizado) => {
+    // Actualizar la lista local
+    if (clienteId) {
+      setPresupuestos(presupuestos.map(p => 
+        p.id === presupuestoActualizado.id ? presupuestoActualizado : p
+      ));
+    } else {
+      setTodosLosPresupuestos(todosLosPresupuestos.map(p => 
+        p.id === presupuestoActualizado.id ? presupuestoActualizado : p
+      ));
     }
   };
 
@@ -280,6 +298,16 @@ export default function Presupuestos() {
                 </div>
               </div>
               <div className={styles.acciones}>
+                <BotonAprobarPresupuesto
+                  presupuesto={{
+                    id: presupuesto.id,
+                    cliente: presupuesto.clienteNombre || cliente?.nombre,
+                    total: presupuesto.valor,
+                    estado: presupuesto.estado
+                  }}
+                  onVentaCreada={handleVentaCreada}
+                  onPresupuestoActualizado={handlePresupuestoActualizado}
+                />
                 <button 
                   onClick={() => handleEditar(presupuesto)}
                   className={styles.btnEditar}

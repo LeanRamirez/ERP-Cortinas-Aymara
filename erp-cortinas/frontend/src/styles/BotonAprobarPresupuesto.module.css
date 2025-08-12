@@ -1,0 +1,263 @@
+.botonAprobar {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.botonAprobar:hover:not(:disabled) {
+  background: #218838;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
+.botonAprobar:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.botonAprobar:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.estadoAprobado {
+  background: #d4edda;
+  color: #155724;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #c3e6cb;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+  cursor: default;
+  overflow: hidden;
+}
+
+.modalContent {
+  background: white;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  cursor: default;
+  position: relative;
+  margin: 0;
+  transform: none;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modalHeader {
+  padding: 1.5rem 1.5rem 0 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+  margin-bottom: 1rem;
+}
+
+.modalHeader h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.modalBody {
+  padding: 0 1.5rem 1rem 1.5rem;
+  cursor: default;
+}
+
+.modalBody p {
+  margin: 0 0 1rem 0;
+  color: #495057;
+  line-height: 1.5;
+  cursor: default;
+}
+
+.modalBody * {
+  cursor: default;
+}
+
+.detallesPresupuesto {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 6px;
+  margin: 1rem 0;
+  border-left: 4px solid #007bff;
+}
+
+.detallesPresupuesto p {
+  margin: 0.25rem 0;
+  font-size: 14px;
+}
+
+.detallesPresupuesto strong {
+  color: #2c3e50;
+}
+
+.advertencia {
+  background: #fff3cd;
+  color: #856404;
+  padding: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #ffeaa7;
+  font-size: 13px;
+  margin: 1rem 0 0 0;
+}
+
+.error {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #f5c6cb;
+  font-size: 14px;
+  margin: 1rem 0 0 0;
+}
+
+.modalFooter {
+  padding: 1rem 1.5rem 1.5rem 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.botonCancelar {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.botonCancelar:hover:not(:disabled) {
+  background: #5a6268;
+}
+
+.botonCancelar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.botonConfirmar {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  min-width: 140px;
+}
+
+.botonConfirmar:hover:not(:disabled) {
+  background: #218838;
+}
+
+.botonConfirmar:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .modal {
+    padding: 0.5rem;
+  }
+  
+  .modalContent {
+    max-width: none;
+    margin: 0;
+  }
+  
+  .modalHeader,
+  .modalBody,
+  .modalFooter {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .modalFooter {
+    flex-direction: column;
+  }
+  
+  .botonCancelar,
+  .botonConfirmar {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .botonAprobar {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  .estadoAprobado {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  
+  .modalHeader h3 {
+    font-size: 1.1rem;
+  }
+  
+  .detallesPresupuesto {
+    padding: 0.75rem;
+  }
+}

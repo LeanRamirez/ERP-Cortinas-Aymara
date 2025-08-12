@@ -1,0 +1,324 @@
+.tablaContainer {
+  width: 100%;
+  margin: 1rem 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.tablaWrapper {
+  overflow-x: auto;
+  max-height: 70vh;
+  position: relative;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  background: white;
+}
+
+/* Cabecera sticky */
+.cabecera {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.cabecera th {
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: #495057;
+  background: #f8f9fa;
+  border-right: 1px solid #dee2e6;
+  white-space: nowrap;
+}
+
+.cabecera th:last-child {
+  border-right: none;
+}
+
+/* Columnas específicas */
+.columnaDescripcion {
+  min-width: 300px;
+  width: 40%;
+}
+
+.columnaCantidad {
+  min-width: 100px;
+  width: 15%;
+  text-align: center;
+}
+
+.columnaPrecio {
+  min-width: 120px;
+  width: 20%;
+  text-align: right;
+}
+
+.columnaSubtotal {
+  min-width: 120px;
+  width: 20%;
+  text-align: right;
+}
+
+.columnaAcciones {
+  min-width: 80px;
+  width: 5%;
+  text-align: center;
+}
+
+/* Cuerpo de la tabla */
+.cuerpo {
+  background: white;
+}
+
+.fila {
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+.fila:hover {
+  background-color: #f8f9fa;
+}
+
+.fila:last-child {
+  border-bottom: none;
+}
+
+/* Celdas */
+.celdaDescripcion,
+.celdaCantidad,
+.celdaPrecio,
+.celdaSubtotal,
+.celdaAcciones {
+  padding: 8px;
+  vertical-align: middle;
+  border-right: 1px solid #e9ecef;
+}
+
+.celdaDescripcion:last-child,
+.celdaCantidad:last-child,
+.celdaPrecio:last-child,
+.celdaSubtotal:last-child,
+.celdaAcciones:last-child {
+  border-right: none;
+}
+
+.celdaCantidad,
+.celdaPrecio {
+  text-align: center;
+}
+
+.celdaSubtotal {
+  text-align: right;
+}
+
+.celdaAcciones {
+  text-align: center;
+}
+
+/* Inputs */
+.inputDescripcion {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  background: white;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.inputDescripcion:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.inputNumerico {
+  width: 100%;
+  max-width: 100px;
+  padding: 6px 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  text-align: right;
+  background: white;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.inputNumerico:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* Texto readonly */
+.textoReadonly {
+  display: block;
+  padding: 6px 8px;
+  color: #495057;
+  font-size: 14px;
+}
+
+/* Subtotal y total */
+.subtotal {
+  font-weight: 500;
+  color: #495057;
+}
+
+.total {
+  font-size: 16px;
+  color: #28a745;
+}
+
+/* Botones */
+.botonEliminar {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.botonEliminar:hover {
+  background: #c82333;
+  transform: scale(1.1);
+}
+
+.botonEliminar:active {
+  transform: scale(0.95);
+}
+
+.botonAgregar {
+  width: 100%;
+  padding: 8px 16px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.botonAgregar:hover {
+  background: #0056b3;
+}
+
+.botonAgregar:active {
+  background: #004085;
+}
+
+/* Fila agregar */
+.filaAgregar td {
+  padding: 12px 8px;
+  border-bottom: none;
+}
+
+/* Pie de tabla */
+.pie {
+  background: #f8f9fa;
+  border-top: 2px solid #dee2e6;
+}
+
+.filaTotal {
+  background: #f8f9fa;
+}
+
+.celdaTotalLabel {
+  padding: 12px 8px;
+  text-align: right;
+  font-weight: 600;
+  color: #495057;
+  border-right: 1px solid #dee2e6;
+}
+
+.celdaTotalValor {
+  padding: 12px 8px;
+  text-align: right;
+  background: #e9ecef;
+  border-right: 1px solid #dee2e6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .tabla {
+    font-size: 12px;
+  }
+  
+  .cabecera th {
+    padding: 8px 4px;
+  }
+  
+  .celdaDescripcion,
+  .celdaCantidad,
+  .celdaPrecio,
+  .celdaSubtotal,
+  .celdaAcciones {
+    padding: 6px 4px;
+  }
+  
+  .columnaDescripcion {
+    min-width: 200px;
+  }
+  
+  .columnaCantidad,
+  .columnaPrecio,
+  .columnaSubtotal {
+    min-width: 80px;
+  }
+  
+  .inputDescripcion,
+  .inputNumerico {
+    padding: 4px 6px;
+    font-size: 12px;
+  }
+  
+  .inputNumerico {
+    max-width: 70px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tablaWrapper {
+    max-height: 60vh;
+  }
+  
+  .tabla {
+    font-size: 11px;
+  }
+  
+  .columnaDescripcion {
+    min-width: 150px;
+  }
+  
+  .columnaCantidad,
+  .columnaPrecio,
+  .columnaSubtotal {
+    min-width: 60px;
+  }
+  
+  .botonEliminar {
+    width: 20px;
+    height: 20px;
+    font-size: 14px;
+  }
+}

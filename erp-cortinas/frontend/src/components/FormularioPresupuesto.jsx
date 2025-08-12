@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import styles from "../styles/FormularioPresupuesto.module.css";
 
 export default function FormularioPresupuesto({ 
@@ -17,6 +18,60 @@ export default function FormularioPresupuesto({
 
   // Calcular precio total automáticamente
   const precioTotal = (parseFloat(formData.cantidad) || 0) * (parseFloat(formData.precioUnitario) || 0);
+
+  // Gestionar el scroll del body cuando el modal está visible
+  useEffect(() => {
+    if (isVisible) {
+      // Guardar el scroll actual
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Restaurar el scroll
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    }
+
+    // Cleanup al desmontar el componente
+    return () => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+    };
+  }, [isVisible]);
+
+  // Manejar tecla Escape para cerrar el modal
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === 'Escape' && isVisible) {
+        handleCancel();
+      }
+    };
+
+    if (isVisible) {
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isVisible]);
+
+  // Manejar clic fuera del modal
+  const handleModalClick = (e) => {
+    if (e.target === e.currentTarget) {
+      handleCancel();
+    }
+  };
 
   useEffect(() => {
     if (presupuesto) {
@@ -113,8 +168,8 @@ export default function FormularioPresupuesto({
 
   if (!isVisible) return null;
 
-  return (
-    <div className={styles.modal}>
+  return createPortal(
+    <div className={styles.modal} onClick={handleModalClick}>
       <div className={styles.modalContent}>
         <div className={styles.modalHeader}>
           <h3>{presupuesto ? "Editar Presupuesto" : "Nuevo Presupuesto"}</h3>
@@ -222,6 +277,7 @@ export default function FormularioPresupuesto({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

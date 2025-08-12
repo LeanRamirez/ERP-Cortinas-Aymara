@@ -17,5 +17,5 @@ app.use("/api/presupuestos", presupuestosRoutes);
 
 app.get("/", (req, res) => res.json({ message: "API funcionando" }));
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 4001;
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));

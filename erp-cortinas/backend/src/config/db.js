@@ -1,4 +1,7 @@
-// Configuración temporal sin Prisma debido a problemas de permisos
-// Este archivo será reemplazado cuando se resuelva el problema con Prisma
+import { PrismaClient } from '@prisma/client';
 
-export default null; // No se usa en la implementación actual
+const prisma = new PrismaClient({
+  log: ['query', 'info', 'warn', 'error'],
+});
+
+export default prisma;

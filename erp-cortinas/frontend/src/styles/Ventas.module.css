@@ -1,0 +1,706 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.titulo {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.botonNuevo {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+}
+
+.botonNuevo:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.botonNuevo:active {
+  transform: translateY(0);
+}
+
+/* Loading y Error */
+.loading {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.1rem;
+  color: #6c757d;
+}
+
+.error {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  border: 1px solid #f5c6cb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cerrarError {
+  background: none;
+  border: none;
+  color: #721c24;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Lista de ventas */
+.listaVentas {
+  margin-top: 1rem;
+}
+
+.sinVentas {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sinVentas p {
+  font-size: 1.1rem;
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+}
+
+.botonCrearPrimera {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.botonCrearPrimera:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+/* Tarjetas de ventas */
+.tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.tarjetaVenta {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+  border: 1px solid #e9ecef;
+}
+
+.tarjetaVenta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.cabeceraTarjeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.infoVenta {
+  flex: 1;
+}
+
+.clienteVenta {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 0.5rem 0;
+}
+
+.fechaVenta {
+  color: #6c757d;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.estadoYAcciones {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.estado {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.estadoPendiente {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.estadoCompletada {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.estadoCancelada {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.acciones {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.botonVer,
+.botonEditar,
+.botonEliminar {
+  background: none;
+  border: 1px solid #dee2e6;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.botonVer:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.botonEditar:hover {
+  background: #d1ecf1;
+  border-color: #bee5eb;
+  color: #0c5460;
+}
+
+.botonEliminar:hover {
+  background: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+}
+
+.resumenVenta {
+  border-top: 1px solid #e9ecef;
+  padding-top: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.totalVenta {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #28a745;
+  margin: 0;
+}
+
+.itemsCount {
+  color: #6c757d;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modalContent {
+  background: white;
+  border-radius: 8px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+  background: #f8f9fa;
+  border-radius: 8px 8px 0 0;
+}
+
+.modalHeader h2 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+}
+
+.cerrarModal {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.cerrarModal:hover {
+  background: #e9ecef;
+  color: #495057;
+}
+
+/* Formulario */
+.formulario {
+  padding: 1.5rem;
+}
+
+.camposBasicos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+}
+
+.campo label {
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+.input,
+.select,
+.textarea {
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.seccionItems {
+  margin: 1.5rem 0;
+}
+
+.seccionItems h3 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.botonesFormulario {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.botonCancelar {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.botonCancelar:hover {
+  background: #5a6268;
+}
+
+.botonGuardar {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.botonGuardar:hover {
+  background: #218838;
+}
+
+/* Detalles de venta */
+.detallesVenta {
+  padding: 1.5rem;
+}
+
+.infoGeneral {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+}
+
+.infoGeneral p {
+  margin: 0.5rem 0;
+  font-size: 14px;
+}
+
+.infoGeneral strong {
+  color: #2c3e50;
+}
+
+.itemsDetalle {
+  margin: 1.5rem 0;
+}
+
+.itemsDetalle h3 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.observaciones {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-top: 1.5rem;
+}
+
+.observaciones h3 {
+  color: #2c3e50;
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+}
+
+.observaciones p {
+  margin: 0;
+  color: #495057;
+  line-height: 1.5;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .titulo {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+  
+  .tarjetas {
+    grid-template-columns: 1fr;
+  }
+  
+  .cabeceraTarjeta {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .estadoYAcciones {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .modalContent {
+    margin: 0.5rem;
+    max-height: 95vh;
+  }
+  
+  .camposBasicos {
+    grid-template-columns: 1fr;
+  }
+  
+  .botonesFormulario {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0.5rem;
+  }
+  
+  .modal {
+    padding: 0.5rem;
+  }
+  
+  .modalHeader {
+    padding: 1rem;
+  }
+  
+  .formulario,
+  .detallesVenta {
+    padding: 1rem;
+  }
+  
+  .tarjetaVenta {
+    padding: 1rem;
+  }
+}
+
+/* Sistema de notificaciones */
+.notificacion {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  min-width: 300px;
+  max-width: 500px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideInRight 0.3s ease-out;
+}
+
+.notificacionContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  gap: 12px;
+}
+
+.notificacionMensaje {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.notificacionCerrar {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  opacity: 0.7;
+}
+
+.notificacionCerrar:hover {
+  opacity: 1;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Tipos de notificación */
+.success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.warning {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.info {
+  background: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Modal de confirmación de eliminación */
+.confirmacionEliminar {
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.iconoAdvertencia {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.mensajeConfirmacion h3 {
+  color: #721c24;
+  margin-bottom: 1.5rem;
+  font-size: 1.2rem;
+}
+
+.detallesVentaEliminar {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 6px;
+  margin: 1rem 0;
+  text-align: left;
+}
+
+.detallesVentaEliminar p {
+  margin: 0.5rem 0;
+  font-size: 14px;
+}
+
+.detallesVentaEliminar strong {
+  color: #2c3e50;
+}
+
+.advertencia {
+  color: #721c24;
+  font-size: 14px;
+  font-style: italic;
+  margin: 1rem 0;
+  padding: 0.5rem;
+  background: #f8d7da;
+  border-radius: 4px;
+  border: 1px solid #f5c6cb;
+}
+
+.botonesConfirmacion {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.botonEliminarConfirmar {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.botonEliminarConfirmar:hover {
+  background: #c82333;
+}
+
+.botonEliminarConfirmar:active {
+  background: #bd2130;
+}
+
+/* Responsive para notificaciones */
+@media (max-width: 768px) {
+  .notificacion {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    min-width: auto;
+    max-width: none;
+  }
+  
+  .notificacionContent {
+    padding: 12px 16px;
+  }
+  
+  .notificacionMensaje {
+    font-size: 13px;
+  }
+
+  .botonesConfirmacion {
+    flex-direction: column;
+  }
+
+  .botonCancelar,
+  .botonEliminarConfirmar {
+    width: 100%;
+  }
+}

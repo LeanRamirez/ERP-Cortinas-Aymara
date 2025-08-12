@@ -23,21 +23,48 @@ model Cliente {
 }
 
 model Venta {
-  id         Int      @id @default(autoincrement())
-  fecha      DateTime @default(now())
-  total      Float
-  clienteId  Int
-  cliente    Cliente  @relation(fields: [clienteId], references: [id])
+  id            Int           @id @default(autoincrement())
+  fecha         DateTime      @default(now())
+  total         Float
+  estado        String        @default("pendiente")
+  observaciones String?
+  clienteId     Int
+  cliente       Cliente       @relation(fields: [clienteId], references: [id])
+  presupuestoId Int?
+  presupuesto   Presupuesto?  @relation(fields: [presupuestoId], references: [id])
+  items         VentaItem[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model VentaItem {
+  id             Int    @id @default(autoincrement())
+  descripcion    String
+  cantidad       Float
+  precioUnitario Float
+  ventaId        Int
+  venta          Venta  @relation(fields: [ventaId], references: [id], onDelete: Cascade)
 }
 
 model Presupuesto {
-  id          Int      @id @default(autoincrement())
+  id          Int               @id @default(autoincrement())
   descripcion String
   valor       Float
-  fecha       DateTime @default(now())
-  estado      String   @default("pendiente")
+  fecha       DateTime          @default(now())
+  estado      String            @default("pendiente")
   clienteId   Int
-  cliente     Cliente  @relation(fields: [clienteId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  cliente     Cliente           @relation(fields: [clienteId], references: [id])
+  items       PresupuestoItem[]
+  ventas      Venta[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model PresupuestoItem {
+  id             Int         @id @default(autoincrement())
+  descripcion    String
+  cantidad       Float
+  precioUnitario Float
+  presupuestoId  Int
+  presupuesto    Presupuesto @relation(fields: [presupuestoId], references: [id], onDelete: Cascade)
 }
