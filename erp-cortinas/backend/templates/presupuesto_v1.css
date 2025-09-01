@@ -1,0 +1,286 @@
+/* Reset y configuración base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    line-height: 1.2;
+    color: #000;
+    background: white;
+}
+
+.presupuesto-container {
+    max-width: 210mm; /* A4 width */
+    min-height: 297mm; /* A4 height */
+    margin: 0 auto;
+    padding: 15mm;
+    background: white;
+    position: relative;
+}
+
+/* Header con información del presupuesto */
+.header-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding: 10px 0;
+}
+
+.presupuesto-numero {
+    text-align: left;
+}
+
+.presupuesto-numero .numero {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.fecha-info {
+    text-align: right;
+    font-size: 12px;
+}
+
+/* Información del emisor */
+.emisor-section {
+    margin-bottom: 30px;
+    text-align: left;
+}
+
+.emisor-info {
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+/* Información del cliente */
+.cliente-section {
+    margin-bottom: 30px;
+}
+
+.presupuestar-label {
+    margin-bottom: 10px;
+    font-size: 12px;
+}
+
+.cliente-info {
+    margin-bottom: 15px;
+    font-size: 12px;
+}
+
+.cliente-detalles {
+    margin-bottom: 20px;
+}
+
+.cliente-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.cliente-table td {
+    padding: 3px 0;
+    font-size: 12px;
+    vertical-align: top;
+}
+
+.cliente-table td:first-child {
+    width: 100px;
+}
+
+/* Tabla de detalle */
+.detalle-section {
+    margin-bottom: 20px;
+}
+
+.detalle-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 2px solid #000;
+}
+
+.detalle-table th {
+    background-color: #f0f0f0;
+    border: 1px solid #000;
+    padding: 8px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.descripcion-header {
+    width: 50%;
+}
+
+.cantidad-header {
+    width: 15%;
+}
+
+.precio-header {
+    width: 17.5%;
+}
+
+.total-header {
+    width: 17.5%;
+}
+
+.detalle-table td {
+    border: 1px solid #000;
+    padding: 8px;
+    font-size: 12px;
+    vertical-align: top;
+}
+
+.descripcion-cell {
+    text-align: left;
+    padding-left: 10px;
+}
+
+.cantidad-cell,
+.precio-cell,
+.total-cell {
+    text-align: center;
+}
+
+.fila-vacia td {
+    height: 25px;
+    border: 1px solid #000;
+}
+
+.fila-vacia .precio-cell {
+    text-align: center;
+}
+
+/* Subtotal */
+.subtotal-section {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 20px;
+}
+
+.subtotal-label {
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.subtotal-valor {
+    font-weight: bold;
+    font-size: 12px;
+    min-width: 100px;
+    text-align: right;
+}
+
+/* Comentarios */
+.comentarios-section {
+    margin-bottom: 20px;
+}
+
+.comentarios-label {
+    margin-bottom: 10px;
+    font-size: 12px;
+}
+
+.comentarios-content {
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+/* Total */
+.total-section {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 20px;
+}
+
+.total-label {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.total-valor {
+    font-weight: bold;
+    font-size: 14px;
+    min-width: 100px;
+    text-align: right;
+}
+
+.total-descuento {
+    font-size: 12px;
+    min-width: 50px;
+    text-align: right;
+}
+
+/* Forma de pago */
+.forma-pago-section {
+    margin-bottom: 30px;
+    font-size: 12px;
+}
+
+/* Footer */
+.footer-section {
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.agradecimiento {
+    font-size: 12px;
+    font-style: italic;
+}
+
+/* Título del documento en la parte inferior */
+.titulo-documento {
+    position: absolute;
+    bottom: 15mm;
+    left: 15mm;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* Estilos para impresión */
+@media print {
+    body {
+        margin: 0;
+        padding: 0;
+    }
+    
+    .presupuesto-container {
+        box-shadow: none;
+        margin: 0;
+        padding: 15mm;
+        max-width: none;
+        width: 100%;
+    }
+    
+    @page {
+        size: A4;
+        margin: 0;
+    }
+}
+
+/* Estilos responsivos para pantalla */
+@media screen and (max-width: 768px) {
+    .presupuesto-container {
+        padding: 10mm;
+        max-width: 100%;
+    }
+    
+    .header-info {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .detalle-table {
+        font-size: 10px;
+    }
+    
+    .detalle-table th,
+    .detalle-table td {
+        padding: 4px;
+    }
+}

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presupuesto - Cortinas Aymara</title>
+    <link rel="stylesheet" href="presupuesto_v1.css">
+</head>
+<body>
+    <div class="presupuesto-container">
+        <!-- Header con información del presupuesto -->
+        <div class="header-info">
+            <div class="presupuesto-numero">
+                <strong>N.º PRESUPUESTO:</strong><br>
+                <span class="numero">#{{numero_presupuesto}}</span>
+            </div>
+            <div class="fecha-info">
+                <strong>FECHA:</strong> {{fecha_presupuesto}}
+            </div>
+        </div>
+
+        <!-- Información del emisor -->
+        <div class="emisor-section">
+            <div class="emisor-info">
+                <strong>{{nombre_emisor}}</strong><br>
+                {{telefono_emisor}}<br>
+                {{direccion_emisor}}
+            </div>
+        </div>
+
+        <!-- Información del cliente -->
+        <div class="cliente-section">
+            <div class="presupuestar-label">
+                <strong>Presupuestar a:</strong>
+            </div>
+            <div class="cliente-info">
+                <strong>{{nombre_cliente}}</strong>
+            </div>
+            
+            <div class="cliente-detalles">
+                <table class="cliente-table">
+                    <tr>
+                        <td><strong>Cuil/Cuit:</strong></td>
+                        <td>{{cuil_cuit_cliente}}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Dirección:</strong></td>
+                        <td>{{direccion_cliente}}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Teléfono:</strong></td>
+                        <td>{{telefono_cliente}}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tabla de productos/servicios -->
+        <div class="detalle-section">
+            <table class="detalle-table">
+                <thead>
+                    <tr>
+                        <th class="descripcion-header">DESCRIPCIÓN</th>
+                        <th class="cantidad-header">CANTIDAD</th>
+                        <th class="precio-header">PRECIO</th>
+                        <th class="total-header">TOTAL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#items}}
+                    <tr>
+                        <td class="descripcion-cell">{{descripcion}}</td>
+                        <td class="cantidad-cell">{{cantidad}}</td>
+                        <td class="precio-cell">${{precio_unitario}}</td>
+                        <td class="total-cell">${{total_item}}</td>
+                    </tr>
+                    {{/items}}
+                    <!-- Filas vacías para mantener el formato -->
+                    <tr class="fila-vacia">
+                        <td></td>
+                        <td></td>
+                        <td>- $</td>
+                        <td></td>
+                    </tr>
+                    <tr class="fila-vacia">
+                        <td></td>
+                        <td></td>
+                        <td>- $</td>
+                        <td></td>
+                    </tr>
+                    <tr class="fila-vacia">
+                        <td></td>
+                        <td></td>
+                        <td>- $</td>
+                        <td></td>
+                    </tr>
+                    <tr class="fila-vacia">
+                        <td></td>
+                        <td></td>
+                        <td>- $</td>
+                        <td></td>
+                    </tr>
+                    <tr class="fila-vacia">
+                        <td></td>
+                        <td></td>
+                        <td>- $</td>
+                        <td></td>
+                    </tr>
+                    <tr class="fila-vacia">
+                        <td></td>
+                        <td></td>
+                        <td>- $</td>
+                        <td></td>
+                    </tr>
+                    <tr class="fila-vacia">
+                        <td></td>
+                        <td></td>
+                        <td>- $</td>
+                        <td></td>
+                    </tr>
+                    <tr class="fila-vacia">
+                        <td></td>
+                        <td></td>
+                        <td>- $</td>
+                        <td></td>
+                    </tr>
+                    <tr class="fila-vacia">
+                        <td></td>
+                        <td></td>
+                        <td>- $</td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Subtotal -->
+        <div class="subtotal-section">
+            <div class="subtotal-label">SUBTOTAL</div>
+            <div class="subtotal-valor">$ {{subtotal}}</div>
+        </div>
+
+        <!-- Comentarios -->
+        <div class="comentarios-section">
+            <div class="comentarios-label">
+                <strong>{{comentarios_adicionales}}</strong>
+            </div>
+            <div class="comentarios-content">
+                <strong>Comentarios:</strong><br>
+                {{comentarios}}
+            </div>
+        </div>
+
+        <!-- Total -->
+        <div class="total-section">
+            <div class="total-label">TOTAL</div>
+            <div class="total-valor">${{total_final}}</div>
+            <div class="total-descuento">- $</div>
+        </div>
+
+        <!-- Forma de pago -->
+        <div class="forma-pago-section">
+            <strong>Forma de pago:</strong> {{forma_pago}}
+        </div>
+
+        <!-- Footer -->
+        <div class="footer-section">
+            <div class="agradecimiento">
+                Gracias por su confianza
+            </div>
+        </div>
+
+        <!-- Título del documento en la parte inferior -->
+        <div class="titulo-documento">
+            <strong>PRESUPUESTO</strong>
+        </div>
+    </div>
+</body>
+</html>

@@ -5,7 +5,9 @@ import {
   getPresupuestosPorCliente,
   crearPresupuesto, 
   editarPresupuesto, 
-  borrarPresupuesto 
+  borrarPresupuesto,
+  generarPDFPresupuesto,
+  diagnosticarEstadoPDF
 } from "./presupuestos.controller.js";
 
 const router = express.Router();
@@ -19,5 +21,8 @@ router.delete("/:id", borrarPresupuesto);
 
 // Ruta específica para obtener presupuestos por cliente
 router.get("/cliente/:clienteId", getPresupuestosPorCliente);
+
+// Rutas para generación de PDF
+router.post("/:id/pdf", generarPDFPresupuesto);
 
 export default router;

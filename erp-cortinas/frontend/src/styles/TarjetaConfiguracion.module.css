@@ -1,0 +1,145 @@
+.tarjeta {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.tarjeta:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Estilos para tarjeta expandida */
+.expandida {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.15);
+  border-color: #007bff;
+}
+
+.expandida .botonEditar {
+  background: #dc3545;
+}
+
+.expandida .botonEditar:hover {
+  background: #c82333;
+}
+
+/* Header de la tarjeta - clickeable */
+.header {
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  transition: background-color 0.2s ease;
+}
+
+.header:hover {
+  background-color: #f8f9fa;
+}
+
+.expandida .header {
+  background-color: #f8f9fa;
+}
+
+.contenido {
+  flex: 1;
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.icono {
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.titulo {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.descripcion {
+  margin: 0;
+  color: #6c757d;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.accion {
+  display: flex;
+  align-items: center;
+}
+
+.botonEditar {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  pointer-events: none; /* Evita que el botón interfiera con el click del header */
+}
+
+.botonEditar:hover {
+  background: #0056b3;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .accion {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 1rem;
+  }
+  
+  .cabecera {
+    gap: 0.5rem;
+  }
+  
+  .icono {
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.25rem;
+  }
+  
+  .titulo {
+    font-size: 1.1rem;
+  }
+  
+  .descripcion {
+    font-size: 0.85rem;
+  }
+}

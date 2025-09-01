@@ -68,3 +68,32 @@ model PresupuestoItem {
   presupuestoId  Int
   presupuesto    Presupuesto @relation(fields: [presupuestoId], references: [id], onDelete: Cascade)
 }
+
+// Configuración única de empresa para envíos (Email SMTP y WhatsApp)
+// Garantiza una sola fila con id='default'
+model ConfiguracionEmpresa {
+  id        String   @id @default("default") // Garantiza una sola fila
+  
+  // === CAMPOS NO SENSIBLES (texto claro) ===
+  fromName  String?  // Nombre del remitente para emails
+  fromEmail String?  // Email del remitente
+  host      String?  // Servidor SMTP (ej: smtp.gmail.com)
+  port      Int?     // Puerto SMTP (ej: 587, 465)
+  secureTLS Boolean? // Usar TLS/SSL
+  replyTo   String?  // Email de respuesta (opcional)
+  wabaId    String?  // WhatsApp Business Account ID (opcional)
+  
+  // === CAMPOS SENSIBLES CIFRADOS ===
+  // Estos campos se almacenan cifrados con AES-256-GCM
+  // En GET se devuelven enmascarados como "***masked***"
+  smtpUsername_enc         String? // Usuario SMTP cifrado
+  smtpPassword_enc         String? // Contraseña SMTP cifrada
+  whatsappPhoneNumberId_enc String? // Phone Number ID de WhatsApp cifrado
+  whatsappToken_enc        String? // Access Token de WhatsApp cifrado
+  
+  // === METADATOS ===
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("configuracion_empresa")
+}

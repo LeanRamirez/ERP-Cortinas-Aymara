@@ -1,0 +1,60 @@
+.seccionExpandable {
+  margin-top: 1rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+  overflow: hidden;
+  transition: all 0.3s ease-out;
+}
+
+.contenido {
+  padding: 0;
+}
+
+.slideIn {
+  animation: slideDown 0.5s ease-out forwards;
+}
+
+.slideOut {
+  animation: slideUp 0.5s ease-out forwards;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 1000px;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 1000px;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .seccionExpandable {
+    margin-top: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .seccionExpandable {
+    margin-top: 0.5rem;
+  }
+}

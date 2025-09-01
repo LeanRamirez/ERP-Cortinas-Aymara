@@ -1,0 +1,60 @@
+# Cline Rules - ERP Cortinas Aymara
+
+## 📋 Reglas de Desarrollo
+
+### 1. Consultar Memory Bank Primero
+- Siempre leé primero los archivos en `docs/memory-bank/` antes de proponer cambios
+- Revisá especialmente:
+  - `PROJECT_BRIEF.md` para contexto del proyecto
+  - `ARCHITECTURE.md` para entender la estructura
+  - `CONVENTIONS.md` para seguir estándares de código
+  - `API_CONTRACTS.md` para endpoints existentes
+  - `DECISIONS.md` para decisiones arquitectónicas previas
+
+### 2. Usar Contexto Existente
+- No reanalices todo el repositorio si falta contexto
+- Usá `TASK_LOG.md` para entender el historial de desarrollo
+- Usá `DECISIONS.md` para conocer decisiones previas y su justificación
+- Consultá `RUNBOOK.md` para comandos de setup y ejecución
+
+### 3. Respetar Convenciones
+- Seguí estrictamente las convenciones definidas en `CONVENTIONS.md`:
+  - Nombres de archivos en camelCase para componentes
+  - Estructura modular del backend
+  - Patrones de CSS Modules
+  - Convenciones de naming para variables y funciones
+
+### 4. Documentar Automáticamente
+- **Nuevas decisiones**: Agregá automáticamente a `DECISIONS.md` como nuevos ADRs
+- **Cambios de tareas**: Actualizá `TASK_LOG.md` con nuevas tareas completadas
+- **Nuevos endpoints**: Documentá en `API_CONTRACTS.md`
+- **Cambios arquitectónicos**: Actualizá `ARCHITECTURE.md` si es necesario
+
+### 5. Flujo de Trabajo Recomendado
+1. Leer memory-bank relevante
+2. Entender el contexto actual
+3. Proponer cambios siguiendo convenciones
+4. Implementar cambios
+5. Actualizar documentación automáticamente
+
+### 6. Archivos Críticos a Consultar
+- `docs/memory-bank/CONVENTIONS.md` - Antes de crear/modificar código
+- `docs/memory-bank/DECISIONS.md` - Antes de tomar decisiones arquitectónicas
+- `docs/memory-bank/API_CONTRACTS.md` - Antes de crear/modificar endpoints
+- `docs/memory-bank/TASK_LOG.md` - Para entender el estado actual del proyecto
+
+### 7. Patrones a Seguir
+- **Backend**: Controller → Service → Repository pattern
+- **Frontend**: Componentes funcionales con hooks
+- **Estilos**: CSS Modules con naming BEM-like
+- **APIs**: REST con formato de respuesta consistente
+- **Seguridad**: Cifrado AES-256-GCM para datos sensibles
+
+### 8. Evitar
+- window.alert (usar sistema de notificaciones custom)
+- Estado global innecesario (fetch directo desde componentes)
+- Reanalizar todo el repo sin consultar memory-bank
+- Cambios que rompan convenciones establecidas
+
+---
+*Estas reglas aseguran consistencia y eficiencia en el desarrollo del ERP Cortinas Aymara*
