@@ -4,6 +4,9 @@ import styles from "../styles/Presupuestos.module.css";
 import axios from "axios";
 import FormularioPresupuesto from "../components/FormularioPresupuesto";
 import BotonAprobarPresupuesto from "../components/BotonAprobarPresupuesto";
+import ModalPDF from "../components/ModalPDF";
+import ModalEnviarEmail from "../components/ModalEnviarEmail";
+import ModalEnviarWhatsApp from "../components/ModalEnviarWhatsApp";
 
 export default function Presupuestos() {
   const { clienteId } = useParams();
@@ -15,6 +18,12 @@ export default function Presupuestos() {
   const [presupuestoEditando, setPresupuestoEditando] = useState(null);
   const [mensaje, setMensaje] = useState({ texto: "", tipo: "" });
   const [loading, setLoading] = useState(true);
+
+  // Estados para modales de envío
+  const [modalPDFVisible, setModalPDFVisible] = useState(false);
+  const [modalEmailVisible, setModalEmailVisible] = useState(false);
+  const [modalWhatsAppVisible, setModalWhatsAppVisible] = useState(false);
+  const [presupuestoSeleccionado, setPresupuestoSeleccionado] = useState(null);
 
   useEffect(() => {
     if (clienteId) {
@@ -158,6 +167,34 @@ export default function Presupuestos() {
     }
   };
 
+  // Funciones para manejar modales de envío
+  const abrirModalPDF = (presupuesto) => {
+    setPresupuestoSeleccionado(presupuesto);
+    setModalPDFVisible(true);
+  };
+
+  const abrirModalEmail = (presupuesto) => {
+    setPresupuestoSeleccionado(presupuesto);
+    setModalEmailVisible(true);
+  };
+
+  const abrirModalWhatsApp = (presupuesto) => {
+    setPresupuestoSeleccionado(presupuesto);
+    setModalWhatsAppVisible(true);
+  };
+
+  const cerrarModales = () => {
+    setModalPDFVisible(false);
+    setModalEmailVisible(false);
+    setModalWhatsAppVisible(false);
+    setPresupuestoSeleccionado(null);
+  };
+
+  const handleEnvioExitoso = (mensaje) => {
+    mostrarMensaje(mensaje, "success");
+    cerrarModales();
+  };
+
   const formatearFecha = (fecha) => {
     return new Date(fecha).toLocaleDateString('es-ES', {
       year: 'numeric',
@@ -298,33 +335,82 @@ export default function Presupuestos() {
                 </div>
               </div>
               <div className={styles.acciones}>
-                <BotonAprobarPresupuesto
-                  presupuesto={{
-                    id: presupuesto.id,
-                    cliente: presupuesto.clienteNombre || cliente?.nombre,
-                    total: presupuesto.valor,
-                    estado: presupuesto.estado
-                  }}
-                  onVentaCreada={handleVentaCreada}
-                  onPresupuestoActualizado={handlePresupuestoActualizado}
-                />
-                <button 
-                  onClick={() => handleEditar(presupuesto)}
-                  className={styles.btnEditar}
-                >
-                  Editar
-                </button>
-                <button 
-                  onClick={() => handleEliminar(presupuesto.id)}
-                  className={styles.btnEliminar}
-                >
-                  Eliminar
-                </button>
+                {/* Botones de envío */}
+                <div className={styles.accionesEnvio}>
+                  <button
+                    onClick={() => abrirModalPDF(presupuesto)}
+                    className={styles.btnVerPdf}
+                    title="Ver PDF"
+                  >
+                    📄
+                  </button>
+                  <button
+                    onClick={() => abrirModalEmail(presupuesto)}
+                    className={styles.btnEnviarEmail}
+                    title="Enviar por Email"
+                  >
+                    📧
+                  </button>
+                  <button
+                    onClick={() => abrirModalWhatsApp(presupuesto)}
+                    className={styles.btnEnviarWhatsApp}
+                    title="Enviar por WhatsApp"
+                  >
+                    📱
+                  </button>
+                </div>
+
+                {/* Botones principales */}
+                <div className={styles.accionesPrincipales}>
+                  <BotonAprobarPresupuesto
+                    presupuesto={{
+                      id: presupuesto.id,
+                      cliente: presupuesto.clienteNombre || cliente?.nombre,
+                      total: presupuesto.valor,
+                      estado: presupuesto.estado
+                    }}
+                    onVentaCreada={handleVentaCreada}
+                    onPresupuestoActualizado={handlePresupuestoActualizado}
+                  />
+                  <button 
+                    onClick={() => handleEditar(presupuesto)}
+                    className={styles.btnEditar}
+                  >
+                    Editar
+                  </button>
+                  <button 
+                    onClick={() => handleEliminar(presupuesto.id)}
+                    className={styles.btnEliminar}
+                  >
+                    Eliminar
+                  </button>
+                </div>
               </div>
             </div>
           ))
         )}
       </div>
+
+      {/* Modales de envío */}
+      <ModalPDF 
+        presupuesto={presupuestoSeleccionado}
+        isVisible={modalPDFVisible}
+        onClose={cerrarModales}
+      />
+
+      <ModalEnviarEmail
+        presupuesto={presupuestoSeleccionado}
+        isVisible={modalEmailVisible}
+        onClose={cerrarModales}
+        onEnvioExitoso={handleEnvioExitoso}
+      />
+
+      <ModalEnviarWhatsApp
+        presupuesto={presupuestoSeleccionado}
+        isVisible={modalWhatsAppVisible}
+        onClose={cerrarModales}
+        onEnvioExitoso={handleEnvioExitoso}
+      />
     </div>
   );
 }

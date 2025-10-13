@@ -1,4 +1,5 @@
 import express from "express";
+import { requireAdminKey } from "../../middleware/auth.js";
 import { 
   getPresupuestos, 
   getPresupuestoPorId, 
@@ -6,8 +7,11 @@ import {
   crearPresupuesto, 
   editarPresupuesto, 
   borrarPresupuesto,
+  servirPDFPresupuesto,
   generarPDFPresupuesto,
-  diagnosticarEstadoPDF
+  diagnosticarEstadoPDF,
+  enviarPresupuestoPorEmail,
+  enviarPresupuestoPorWhatsApp
 } from "./presupuestos.controller.js";
 
 const router = express.Router();
@@ -22,7 +26,12 @@ router.delete("/:id", borrarPresupuesto);
 // Ruta específica para obtener presupuestos por cliente
 router.get("/cliente/:clienteId", getPresupuestosPorCliente);
 
-// Rutas para generación de PDF
+// Rutas para PDFs
+router.get("/:id/pdf", servirPDFPresupuesto);
 router.post("/:id/pdf", generarPDFPresupuesto);
+
+// Rutas para envío de presupuestos
+router.post("/:id/enviar-email", enviarPresupuestoPorEmail);
+router.post("/:id/enviar-whatsapp", requireAdminKey, enviarPresupuestoPorWhatsApp);
 
 export default router;

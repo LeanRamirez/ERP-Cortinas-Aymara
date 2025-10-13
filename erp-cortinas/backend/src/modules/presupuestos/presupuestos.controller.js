@@ -6,6 +6,10 @@ import {
   actualizarPresupuesto, 
   eliminarPresupuesto 
 } from "./presupuestos.service.js";
+import PDFService from "../pdf/pdf.service.js";
+import EmailService from "../../services/email.service.js";
+import { getConfigForInternalUse } from "../configuracion/configuracion.service.js";
+import { sendBudgetPdfWhatsAppAdvanced } from "../../services/whatsapp.service.js";
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -73,6 +77,16 @@ export const crearPresupuesto = async (req, res) => {
       clienteId: parseInt(clienteId),
       estado: estado || 'pendiente'
     });
+
+    // Generar PDF automáticamente después de crear el presupuesto
+    try {
+      const presupuestoCompleto = await obtenerPresupuestoPorId(presupuesto.id);
+      const resultadoPDF = await PDFService.generarPresupuestoPDFPorId(presupuestoCompleto);
+      console.log(`[PDF-AUTO] PDF generado automáticamente para presupuesto ${presupuesto.id}: ${resultadoPDF.archivo.nombre}`);
+    } catch (pdfError) {
+      console.warn(`[PDF-AUTO] Error generando PDF automático para presupuesto ${presupuesto.id}:`, pdfError.message);
+      // No fallar la creación del presupuesto por error en PDF
+    }
     
     res.status(201).json(presupuesto);
   } catch (err) {
@@ -127,6 +141,51 @@ export const borrarPresupuesto = async (req, res) => {
       return res.status(404).json({ error: "Presupuesto no encontrado" });
     }
     res.status(500).json({ error: "Error al eliminar presupuesto" });
+  }
+};
+
+/**
+ * Sirve PDF de presupuesto (GET /api/presupuestos/:id/pdf)
+ * Genera automáticamente si no existe y luego lo sirve
+ */
+export const servirPDFPresupuesto = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const presupuestoId = parseInt(id);
+
+    // Obtener presupuesto
+    const presupuesto = await obtenerPresupuestoPorId(presupuestoId);
+    if (!presupuesto) {
+      return res.status(404).json({ error: "Presupuesto no encontrado" });
+    }
+
+    try {
+      // Generar PDF usando el servicio (reutiliza si existe)
+      const resultadoPDF = await PDFService.generarPresupuestoPDFPorId(presupuesto);
+      const filePath = resultadoPDF.archivo.ruta;
+      const filename = resultadoPDF.archivo.nombre;
+
+      console.log(`[PDF-SERVE] ${resultadoPDF.mensaje}: ${filePath}`);
+
+      // Verificar que el archivo existe
+      await fs.access(filePath);
+
+      // Servir el archivo PDF
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+      res.sendFile(filePath);
+
+    } catch (pdfError) {
+      console.error("Error generando/sirviendo PDF:", pdfError);
+      return res.status(500).json({ 
+        error: "Error al generar el archivo PDF",
+        details: pdfError.message 
+      });
+    }
+
+  } catch (error) {
+    console.error("Error sirviendo PDF:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 };
 
@@ -378,6 +437,451 @@ export const diagnosticarEstadoPDF = async (req, res) => {
   } catch (error) {
     console.error('Error en diagnóstico:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+/**
+ * Genera PDF de presupuesto en una ruta específica
+ */
+async function generarPDFPresupuestoArchivo(presupuesto, filePath) {
+  const isVerbose = process.env.DIAG_VERBOSE === 'true';
+  
+  try {
+    // Validar datos del presupuesto
+    const validationResult = validarDatosPresupuesto(presupuesto);
+    if (!validationResult.valid) {
+      throw new Error(`Datos incompletos: ${validationResult.missing.join(', ')}`);
+    }
+
+    // Cargar templates
+    const templatesPath = path.join(__dirname, '../../../templates');
+    const templatePath = path.join(templatesPath, 'presupuesto_v1.html');
+    const cssPath = path.join(templatesPath, 'presupuesto_v1.css');
+
+    const templateContent = await fs.readFile(templatePath, 'utf-8');
+    const cssContent = await fs.readFile(cssPath, 'utf-8');
+
+    // Procesar datos para template
+    const datosTemplate = procesarDatosTemplate(presupuesto);
+
+    // Asegurar directorio
+    const publicPath = path.dirname(filePath);
+    await fs.mkdir(publicPath, { recursive: true });
+
+    // Generar PDF
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+
+    try {
+      const page = await browser.newPage();
+      const template = handlebars.compile(templateContent);
+      let htmlContent = template(datosTemplate);
+      htmlContent = htmlContent.replace(
+        '<link rel="stylesheet" href="presupuesto_v1.css">',
+        `<style>${cssContent}</style>`
+      );
+
+      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+      
+      await page.pdf({
+        path: filePath,
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '0mm',
+          right: '0mm',
+          bottom: '0mm',
+          left: '0mm'
+        }
+      });
+
+      if (isVerbose) console.log(`[PDF-FILE] PDF generado: ${filePath}`);
+    } finally {
+      await browser.close();
+    }
+  } catch (error) {
+    if (isVerbose) console.error(`[PDF-FILE] Error:`, error.message);
+    throw error;
+  }
+}
+
+/**
+ * Función interna para generar PDF automáticamente (sin respuesta HTTP)
+ */
+async function generarPDFPresupuestoInterno(presupuesto) {
+  const isVerbose = process.env.DIAG_VERBOSE === 'true';
+  
+  try {
+    // Validar datos del presupuesto
+    const validationResult = validarDatosPresupuesto(presupuesto);
+    if (!validationResult.valid) {
+      throw new Error(`Datos incompletos: ${validationResult.missing.join(', ')}`);
+    }
+
+    // Verificar si el PDF ya existe
+    const filename = `Presupuesto-${presupuesto.id}.pdf`;
+    const publicPath = path.join(__dirname, '../../../public/pdfs');
+    const filePath = path.join(publicPath, filename);
+    
+    try {
+      await fs.access(filePath);
+      // PDF ya existe, no regenerar
+      if (isVerbose) console.log(`[PDF-AUTO] PDF ya existe: ${filePath}`);
+      return;
+    } catch {
+      // PDF no existe, continuar con generación
+    }
+
+    // Cargar templates
+    const templatesPath = path.join(__dirname, '../../../templates');
+    const templatePath = path.join(templatesPath, 'presupuesto_v1.html');
+    const cssPath = path.join(templatesPath, 'presupuesto_v1.css');
+
+    const templateContent = await fs.readFile(templatePath, 'utf-8');
+    const cssContent = await fs.readFile(cssPath, 'utf-8');
+
+    // Procesar datos para template
+    const datosTemplate = procesarDatosTemplate(presupuesto);
+
+    // Asegurar directorio
+    await fs.mkdir(publicPath, { recursive: true });
+
+    // Generar PDF
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+
+    try {
+      const page = await browser.newPage();
+      const template = handlebars.compile(templateContent);
+      let htmlContent = template(datosTemplate);
+      htmlContent = htmlContent.replace(
+        '<link rel="stylesheet" href="presupuesto_v1.css">',
+        `<style>${cssContent}</style>`
+      );
+
+      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+      
+      await page.pdf({
+        path: filePath,
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '0mm',
+          right: '0mm',
+          bottom: '0mm',
+          left: '0mm'
+        }
+      });
+
+      if (isVerbose) console.log(`[PDF-AUTO] PDF generado: ${filePath}`);
+    } finally {
+      await browser.close();
+    }
+  } catch (error) {
+    if (isVerbose) console.error(`[PDF-AUTO] Error:`, error.message);
+    throw error;
+  }
+}
+
+/**
+ * Enviar presupuesto por email
+ * POST /api/presupuestos/:id/enviar-email
+ */
+export const enviarPresupuestoPorEmail = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Log detallado de entrada para debugging
+    console.log(`[EMAIL-DEBUG] Iniciando envío de email para presupuesto ${id}`);
+    console.log(`[EMAIL-DEBUG] Request body recibido:`, JSON.stringify(req.body, null, 2));
+    console.log(`[EMAIL-DEBUG] Content-Type:`, req.get('Content-Type'));
+
+    const { email, asunto, mensaje } = req.body;
+
+    // Validaciones básicas con logging detallado
+    console.log(`[EMAIL-DEBUG] Campos extraídos - email: "${email}", asunto: "${asunto}", mensaje: "${mensaje}"`);
+
+    if (!email || email.trim() === '') {
+      console.log(`[EMAIL-ERROR] Campo email faltante o vacío`);
+      return res.status(400).json({ 
+        success: false,
+        error: "El campo 'email' es requerido y no puede estar vacío" 
+      });
+    }
+
+    if (!asunto || asunto.trim() === '') {
+      console.log(`[EMAIL-ERROR] Campo asunto faltante o vacío`);
+      return res.status(400).json({ 
+        success: false,
+        error: "El campo 'asunto' es requerido y no puede estar vacío" 
+      });
+    }
+
+    if (!mensaje || mensaje.trim() === '') {
+      console.log(`[EMAIL-ERROR] Campo mensaje faltante o vacío`);
+      return res.status(400).json({ 
+        success: false,
+        error: "El campo 'mensaje' es requerido y no puede estar vacío" 
+      });
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.log(`[EMAIL-ERROR] Formato de email inválido: ${email}`);
+      return res.status(400).json({ 
+        success: false,
+        error: "El formato del email es inválido" 
+      });
+    }
+
+    console.log(`[EMAIL-DEBUG] Validaciones pasadas, obteniendo presupuesto ${id}`);
+
+    // Obtener el presupuesto por ID
+    const presupuesto = await obtenerPresupuestoPorId(Number(id));
+    
+    if (!presupuesto) {
+      console.log(`[EMAIL-ERROR] Presupuesto ${id} no encontrado`);
+      return res.status(404).json({ 
+        success: false,
+        error: "Presupuesto no encontrado" 
+      });
+    }
+
+    console.log(`[EMAIL-DEBUG] Presupuesto encontrado: ${presupuesto.descripcion}`);
+
+    // Generar o reutilizar el PDF del presupuesto
+    let resultadoPDF;
+    try {
+      console.log(`[EMAIL-DEBUG] Generando/obteniendo PDF...`);
+      resultadoPDF = await PDFService.generarPresupuestoPDFPorId(presupuesto);
+      console.log(`[PDF-EMAIL] ${resultadoPDF.reutilizado ? 'Reutilizando' : 'Generando'} PDF para presupuesto ${id}`);
+    } catch (pdfError) {
+      console.error(`[PDF-ERROR] Error generando PDF para presupuesto ${id}:`, pdfError.message);
+      console.error(`[PDF-ERROR] Stack trace:`, pdfError.stack);
+      return res.status(500).json({
+        success: false,
+        error: "Error al generar el archivo PDF: " + pdfError.message
+      });
+    }
+
+    const { ruta, nombre } = resultadoPDF.archivo;
+
+    console.log(`[EMAIL-DEBUG] PDF obtenido - Ruta: ${ruta}, Nombre: ${nombre}`);
+
+    // Leer el PDF como Buffer para adjuntarlo al email
+    let pdfBuffer;
+    try {
+      console.log(`[EMAIL-DEBUG] Leyendo archivo PDF...`);
+      pdfBuffer = await fs.readFile(ruta);
+      console.log(`[EMAIL-DEBUG] PDF leído correctamente, tamaño: ${pdfBuffer.length} bytes`);
+    } catch (fsError) {
+      console.error(`[FILE-ERROR] Error leyendo PDF en ${ruta}:`, fsError.message);
+      return res.status(500).json({
+        success: false,
+        error: "Error al leer el archivo PDF generado: " + fsError.message
+      });
+    }
+
+    // Enviar el email con el PDF adjunto
+    try {
+      console.log(`[EMAIL-DEBUG] Enviando email a ${email} con asunto "${asunto}"`);
+      const emailResult = await EmailService.sendEmail({
+        to: email,
+        subject: asunto,
+        text: mensaje,
+        attachments: [
+          {
+            filename: nombre,
+            content: pdfBuffer,
+            contentType: 'application/pdf'
+          }
+        ]
+      });
+
+      console.log(`[EMAIL-SUCCESS] Presupuesto ${id} enviado a ${email} - MessageID: ${emailResult.messageId}`);
+      
+      return res.json({
+        success: true,
+        mensaje: 'Email enviado exitosamente'
+      });
+
+    } catch (emailError) {
+      console.error(`[EMAIL-ERROR] Error enviando email para presupuesto ${id}:`, emailError.message);
+      console.error(`[EMAIL-ERROR] Stack trace:`, emailError.stack);
+      return res.status(500).json({
+        success: false,
+        error: "Error al enviar el email: " + emailError.message
+      });
+    }
+
+  } catch (error) {
+    console.error(`[INTERNAL-ERROR] Error interno enviando email para presupuesto ${req.params.id}:`, error.message);
+    console.error(`[INTERNAL-ERROR] Stack trace:`, error.stack);
+    return res.status(500).json({ 
+      success: false,
+      error: "Error interno del servidor: " + error.message
+    });
+  }
+};
+
+/**
+ * Enviar presupuesto por WhatsApp
+ * POST /api/presupuestos/:id/enviar-whatsapp
+ */
+export const enviarPresupuestoPorWhatsApp = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { to, message } = req.body;
+
+    console.log(`[WAPP-SEND] Iniciando envío para presupuesto ${id}`);
+
+    // Validaciones de entrada
+    if (!to) {
+      return res.status(400).json({ 
+        success: false,
+        error: "El campo 'to' es requerido" 
+      });
+    }
+
+    // Validar formato E.164
+    const e164Regex = /^\+[1-9]\d{1,14}$/;
+    if (!e164Regex.test(to)) {
+      return res.status(400).json({ 
+        success: false,
+        error: "El número debe estar en formato E.164 (ej: +5491123456789)" 
+      });
+    }
+
+    // Obtener presupuesto
+    const presupuesto = await obtenerPresupuestoPorId(parseInt(id));
+    if (!presupuesto) {
+      return res.status(404).json({ 
+        success: false,
+        error: "Presupuesto no encontrado" 
+      });
+    }
+
+    // Obtener credenciales descifradas
+    const config = await getConfigForInternalUse();
+    if (!config.whatsappPhoneNumberId || !config.whatsappToken) {
+      return res.status(400).json({
+        success: false,
+        error: "Configuración de WhatsApp incompleta. Configure Phone Number ID y Token en la sección de configuración."
+      });
+    }
+
+    // Generar o reutilizar PDF
+    const filename = `Presupuesto-${id}.pdf`;
+    const publicPath = path.join(__dirname, '../../../public/pdfs');
+    const filePath = path.join(publicPath, filename);
+    
+    try {
+      await fs.access(filePath);
+      console.log(`[PDF-SERVE] Reutilizando PDF existente: ${filename}`);
+    } catch {
+      // PDF no existe, generarlo
+      console.log(`[PDF-SERVE] Generando PDF para presupuesto ${id}`);
+      await generarPDFPresupuestoInterno(presupuesto);
+    }
+
+    // Construir URL pública del PDF
+    const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+    const publicUrl = `${baseUrl}/public/pdfs/${filename}`;
+
+    // Preparar mensaje personalizado o usar default
+    const mensajePersonalizado = message || `¡Hola! Te compartimos el presupuesto #${id} que solicitaste.
+
+📋 *Detalles del presupuesto:*
+• Descripción: ${presupuesto.descripcion}
+• Valor: ${new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS'
+    }).format(presupuesto.valor)}
+
+¿Tienes alguna consulta? ¡Estamos aquí para ayudarte! 😊
+
+*Cortinas Aymara*`;
+
+    // Enviar WhatsApp usando el servicio avanzado
+    try {
+      const resultado = await sendBudgetPdfWhatsAppAdvanced({
+        to: to,
+        publicUrl: publicUrl,
+        fileName: filename,
+        message: mensajePersonalizado,
+        phoneNumberId: config.whatsappPhoneNumberId,
+        token: config.whatsappToken
+      });
+
+      console.log(`[WAPP-SEND] WhatsApp enviado exitosamente - ID: ${resultado.messageId}, Tipo: ${resultado.messageType}`);
+
+      return res.status(200).json({
+        success: true,
+        message: "WhatsApp enviado exitosamente",
+        data: {
+          messageId: resultado.messageId,
+          to: resultado.to,
+          messageType: resultado.messageType,
+          sentAt: resultado.sentAt,
+          pdfUrl: publicUrl
+        }
+      });
+
+    } catch (whatsappError) {
+      console.error(`[WAPP-ERROR] Error enviando WhatsApp para presupuesto ${id}:`, whatsappError.message);
+
+      // Mapear errores específicos a códigos HTTP apropiados
+      if (whatsappError.message.includes('Token de WhatsApp inválido')) {
+        return res.status(502).json({
+          success: false,
+          error: "Error de autenticación WhatsApp",
+          message: whatsappError.message
+        });
+      } else if (whatsappError.message.includes('no está registrado en WhatsApp')) {
+        return res.status(502).json({
+          success: false,
+          error: "Error de destinatario WhatsApp",
+          message: whatsappError.message
+        });
+      } else if (whatsappError.message.includes('Phone Number ID inválido')) {
+        return res.status(502).json({
+          success: false,
+          error: "Error de configuración WhatsApp",
+          message: whatsappError.message
+        });
+      } else if (whatsappError.message.includes('Límite de mensajes excedido')) {
+        return res.status(502).json({
+          success: false,
+          error: "Error de límite de WhatsApp",
+          message: whatsappError.message
+        });
+      } else if (whatsappError.message.includes('Timeout')) {
+        return res.status(502).json({
+          success: false,
+          error: "Error de conexión WhatsApp",
+          message: whatsappError.message
+        });
+      } else {
+        return res.status(502).json({
+          success: false,
+          error: "Error de WhatsApp Cloud API",
+          message: whatsappError.message
+        });
+      }
+    }
+
+  } catch (error) {
+    console.error(`[WAPP-ERROR] Error interno enviando WhatsApp para presupuesto ${req.params.id}:`, error.message);
+    return res.status(500).json({ 
+      success: false,
+      error: "Error interno del servidor",
+      message: "No se pudo enviar el mensaje de WhatsApp"
+    });
   }
 };
 

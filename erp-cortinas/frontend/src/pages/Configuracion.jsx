@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import TarjetaConfiguracion from '../components/TarjetaConfiguracion';
 import SeccionExpandable from '../components/SeccionExpandable';
 import FormularioWhatsApp from '../components/FormularioWhatsApp';
+import FormularioEmail from '../components/FormularioEmail';
 import FormularioPreferenciasEnvio from '../components/FormularioPreferenciasEnvio';
 import useConfiguracion from '../hooks/useConfiguracion';
 import styles from '../styles/Configuracion.module.css';
@@ -12,6 +13,7 @@ const Configuracion = () => {
     empresa: false,
     presupuestos: false,
     envios: false,
+    email: false,
     generales: false,
     facturacion: false
   });
@@ -21,6 +23,7 @@ const Configuracion = () => {
     empresa: false,
     presupuestos: false,
     envios: false,
+    email: false,
     generales: false,
     facturacion: false
   });
@@ -32,6 +35,7 @@ const Configuracion = () => {
     error,
     saving,
     guardarConfiguracion,
+    probarEmail,
     probarWhatsApp
   } = useConfiguracion();
 
@@ -51,9 +55,15 @@ const Configuracion = () => {
     },
     {
       id: 'envios',
-      titulo: 'Configuración de envío',
-      icono: '📤',
-      descripcion: 'Configuración de email SMTP y WhatsApp para envío de documentos'
+      titulo: 'Configuración de WhatsApp',
+      icono: '📱',
+      descripcion: 'Configuración de WhatsApp para envío de documentos'
+    },
+    {
+      id: 'email',
+      titulo: 'Configuración de Email',
+      icono: '📧',
+      descripcion: 'Configurá la cuenta SMTP que se usará para enviar presupuestos y facturas por email.'
     },
     {
       id: 'generales',
@@ -86,6 +96,37 @@ const Configuracion = () => {
     }
   };
 
+  // Función específica para cerrar formulario (solo llamada por botón de cierre)
+  const cerrarFormulario = (seccionId) => {
+    if (formularioAbierto[seccionId]) {
+      setCerrando(prev => ({ ...prev, [seccionId]: true }));
+      setTimeout(() => {
+        setFormularioAbierto(prev => ({ ...prev, [seccionId]: false }));
+        setCerrando(prev => ({ ...prev, [seccionId]: false }));
+      }, 300);
+    }
+  };
+
+  // Función específica para el guardado exitoso (mantiene formulario abierto en caso de error)
+  const manejarGuardado = async (datosActualizados) => {
+    const resultado = await guardarConfiguracion(datosActualizados);
+    
+    // Solo cerrar formulario si el guardado fue exitoso
+    if (resultado.success) {
+      // No cerrar automáticamente, dejar que el usuario decida
+      // Si queremos cerrar automáticamente en caso de éxito, descomentar las siguientes líneas:
+      /*
+      Object.keys(formularioAbierto).forEach(key => {
+        if (formularioAbierto[key]) {
+          cerrarFormulario(key);
+        }
+      });
+      */
+    }
+    
+    return resultado;
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -112,11 +153,11 @@ const Configuracion = () => {
       {/* Formularios expandidos fuera del grid */}
       {Object.keys(formularioAbierto).some(key => formularioAbierto[key] || cerrando[key]) && (
         <div className={styles.formularioExpandido}>
-          {/* Formulario de Configuración de Envíos (WhatsApp) */}
+          {/* Formulario de Configuración de WhatsApp */}
           {(formularioAbierto.envios || cerrando.envios) && (
             <div className={`${styles.formularioContainer} ${cerrando.envios ? styles.cerrando : ''}`}>
               <div className={styles.formularioHeader}>
-                <h2 className={styles.formularioTitulo}>📤 Configuración de Envío</h2>
+                <h2 className={styles.formularioTitulo}>📱 Configuración de WhatsApp</h2>
                 <button 
                   className={styles.botonCerrar}
                   onClick={() => handleSeccionClick('envios')}
@@ -134,8 +175,39 @@ const Configuracion = () => {
                 ) : (
                   <FormularioWhatsApp
                     configuracion={configuracion}
-                    onGuardar={guardarConfiguracion}
+                    onGuardar={manejarGuardado}
                     onProbar={probarWhatsApp}
+                    saving={saving}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Formulario de Configuración de Email */}
+          {(formularioAbierto.email || cerrando.email) && (
+            <div className={`${styles.formularioContainer} ${cerrando.email ? styles.cerrando : ''}`}>
+              <div className={styles.formularioHeader}>
+                <h2 className={styles.formularioTitulo}>📧 Configuración de Email</h2>
+                <button 
+                  className={styles.botonCerrar}
+                  onClick={() => handleSeccionClick('email')}
+                >
+                  ✕
+                </button>
+              </div>
+              <div className={styles.formularioContenido}>
+                {loading ? (
+                  <div className={styles.loading}>Cargando configuración...</div>
+                ) : error ? (
+                  <div className={styles.error}>
+                    Error al cargar la configuración: {error}
+                  </div>
+                ) : (
+                  <FormularioEmail
+                    configuracion={configuracion}
+                    onGuardar={manejarGuardado}
+                    onProbar={probarEmail}
                     saving={saving}
                   />
                 )}
@@ -163,7 +235,7 @@ const Configuracion = () => {
 
           {/* Placeholders para otras secciones */}
           {seccionesConfiguracion.map((seccion) => (
-            !['envios', 'presupuestos'].includes(seccion.id) && (formularioAbierto[seccion.id] || cerrando[seccion.id]) && (
+            !['envios', 'email', 'presupuestos'].includes(seccion.id) && (formularioAbierto[seccion.id] || cerrando[seccion.id]) && (
               <div key={seccion.id} className={`${styles.formularioContainer} ${cerrando[seccion.id] ? styles.cerrando : ''}`}>
                 <div className={styles.formularioHeader}>
                   <h2 className={styles.formularioTitulo}>{seccion.icono} {seccion.titulo}</h2>

@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import axios from "axios";
-import { getConfig, updateConfig, getConfigForInternalUse } from "./configuracion.service.js";
+import { getConfig, updateConfig, getConfigForInternalUse, limpiarCredencialesCorruptas as limpiarCredencialesService } from "./configuracion.service.js";
+import emailService from "../../services/email.service.js";
 
 // Regex para validar formato E.164
 const E164_REGEX = /^\+[1-9]\d{1,14}$/;
@@ -94,6 +95,7 @@ export const actualizarConfiguracionEnvios = async (req, res) => {
 
 /**
  * Prueba el envío de email con la configuración SMTP actual
+ * Usa el servicio de email que obtiene datos exclusivamente de la BD
  * @param {Object} req - Request de Express
  * @param {Object} res - Response de Express
  */
@@ -138,57 +140,13 @@ export const probarEnvioEmail = async (req, res) => {
       });
     }
 
-    // Obtener configuración interna (descifrada)
-    const config = await getConfigForInternalUse();
-    
-    if (!config) {
-      return res.status(424).json({
-        success: false,
-        error: 'Configuración incompleta',
-        message: 'No se ha configurado el sistema de envíos. Configure primero los datos SMTP.'
-      });
-    }
-
-    // Verificar campos requeridos para SMTP
-    if (!config.host || !config.fromEmail || !config.smtpUsername || !config.smtpPassword) {
-      return res.status(424).json({
-        success: false,
-        error: 'Configuración incompleta',
-        message: 'Faltan datos SMTP requeridos: host, fromEmail, smtpUsername y smtpPassword son obligatorios.'
-      });
-    }
-
-    // Crear transporter de nodemailer
-    const transporter = nodemailer.createTransport({
-      host: config.host,
-      port: config.port || 587,
-      secure: config.secureTLS || false,
-      auth: {
-        user: config.smtpUsername,
-        pass: config.smtpPassword
-      }
-    });
-
-    // Preparar el email
-    const fromAddress = config.fromName 
-      ? `${config.fromName} <${config.fromEmail}>`
-      : config.fromEmail;
-
-    const mailOptions = {
-      from: fromAddress,
-      to: to,
-      subject: subject,
+    // Usar el servicio de email que obtiene datos de la BD
+    const result = await emailService.sendEmail({
+      to,
+      subject,
       text: message,
       html: `<p>${message.replace(/\n/g, '<br>')}</p>`
-    };
-
-    // Agregar replyTo si está configurado
-    if (config.replyTo) {
-      mailOptions.replyTo = config.replyTo;
-    }
-
-    // Enviar el email
-    const info = await transporter.sendMail(mailOptions);
+    });
 
     // Registrar en auditoría (sin datos sensibles)
     const userId = req.user?.id || 'unknown';
@@ -199,7 +157,7 @@ export const probarEnvioEmail = async (req, res) => {
     res.status(200).json({
       success: true,
       data: {
-        messageId: info.messageId,
+        messageId: result.messageId,
         to: to,
         subject: subject,
         sentAt: timestamp,
@@ -211,36 +169,56 @@ export const probarEnvioEmail = async (req, res) => {
   } catch (error) {
     console.error('Error al enviar email de prueba:', error.message);
 
-    // Manejar errores específicos de SMTP
-    if (error.code === 'EAUTH' || error.responseCode === 535) {
-      return res.status(502).json({
-        success: false,
-        error: 'Error de autenticación SMTP',
-        message: 'Las credenciales SMTP son incorrectas. Verifique usuario y contraseña.'
-      });
-    }
-
-    if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
-      return res.status(502).json({
-        success: false,
-        error: 'Error de conexión SMTP',
-        message: 'No se pudo conectar al servidor SMTP. Verifique host y puerto.'
-      });
-    }
-
-    if (error.code === 'EMESSAGE' || error.responseCode >= 500) {
-      return res.status(502).json({
-        success: false,
-        error: 'Error del servidor SMTP',
-        message: 'El servidor SMTP rechazó el mensaje. Verifique la configuración.'
-      });
-    }
-
-    // Error genérico
-    res.status(500).json({
+    // El servicio de email ya maneja los errores y los convierte en mensajes legibles
+    res.status(502).json({
       success: false,
-      error: 'Error interno del servidor',
-      message: 'No se pudo enviar el email de prueba'
+      error: 'Error de envío de email',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Verifica la conexión SMTP sin enviar emails
+ * @param {Object} req - Request de Express
+ * @param {Object} res - Response de Express
+ */
+export const verificarConexionSMTP = async (req, res) => {
+  try {
+    await emailService.verifyConnection();
+    res.json({ 
+      success: true, 
+      message: 'Conexión SMTP verificada exitosamente' 
+    });
+  } catch (error) {
+    console.error('Error verificando conexión SMTP:', error.message);
+    res.status(400).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
+/**
+ * Limpia datos cifrados corruptos en la base de datos
+ * @param {Object} req - Request de Express
+ * @param {Object} res - Response de Express
+ */
+export const limpiarDatosCorruptos = async (req, res) => {
+  try {
+    const result = await emailService.cleanupCorruptedData();
+    res.json({ 
+      success: true, 
+      message: result.needsReconfiguration 
+        ? 'Se detectaron datos corruptos. Es necesario reconfigurar SMTP.' 
+        : 'No se encontraron datos corruptos.',
+      needsReconfiguration: result.needsReconfiguration
+    });
+  } catch (error) {
+    console.error('Error limpiando datos corruptos:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
     });
   }
 };
@@ -380,6 +358,69 @@ export const probarEnvioWhatsApp = async (req, res) => {
       success: false,
       error: 'Error interno del servidor',
       message: 'No se pudo enviar el mensaje de WhatsApp'
+    });
+  }
+};
+
+/**
+ * Limpia las credenciales cifradas corruptas
+ * Elimina los valores de campos cifrados que pueden estar causando errores
+ * @param {Object} req - Request de Express
+ * @param {Object} res - Response de Express
+ */
+export const limpiarCredencialesCorruptas = async (req, res) => {
+  try {
+    const userId = req.user?.id || 'unknown';
+    const timestamp = new Date().toISOString();
+    const ip = req.ip || req.connection.remoteAddress;
+
+    console.log(`[${timestamp}] Iniciando limpieza de credenciales corruptas - Admin: ${userId} - IP: ${ip}`);
+    
+    // Buscar y limpiar configuración con ID "default"
+    const resultado = await limpiarCredencialesService();
+    
+    if (resultado.encontrada) {
+      // Log de auditoría detallado
+      console.log(`[${timestamp}] AUDITORIA - Credenciales cifradas limpiadas exitosamente`);
+      console.log(`[${timestamp}] AUDITORIA - Campos limpiados: smtpUsername_enc, smtpPassword_enc, whatsappPhoneNumberId_enc, whatsappToken_enc`);
+      console.log(`[${timestamp}] AUDITORIA - Configuración ID: default - Admin: ${userId} - IP: ${ip}`);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Credenciales cifradas corruptas limpiadas correctamente',
+        detalles: {
+          configuracionId: 'default',
+          camposLimpiados: [
+            'smtpUsername_enc',
+            'smtpPassword_enc', 
+            'whatsappPhoneNumberId_enc',
+            'whatsappToken_enc'
+          ],
+          timestamp: timestamp
+        }
+      });
+    } else {
+      console.log(`[${timestamp}] AUDITORIA - No se encontró configuración con ID 'default' para limpiar - Admin: ${userId}`);
+      
+      res.status(404).json({
+        success: false,
+        message: 'No se encontró configuración con ID "default" para limpiar',
+        detalles: {
+          configuracionId: 'default',
+          encontrada: false,
+          timestamp: timestamp
+        }
+      });
+    }
+  } catch (error) {
+    const timestamp = new Date().toISOString();
+    console.error(`[${timestamp}] ERROR - Limpieza de credenciales falló:`, error.message);
+    
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor al limpiar credenciales',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      timestamp: timestamp
     });
   }
 };

@@ -20,7 +20,8 @@ app.use(cors());
 app.use(express.json());
 
 // Servir archivos estáticos (PDFs)
-app.use('/public', express.static(path.join(__dirname, '../public')));
+app.use('/public', express.static(path.resolve('public')));
+// app.use('/public', express.static(path.join(__dirname, '../public')));
 
 app.use("/api/clientes", clientesRoutes);
 app.use("/api/ventas", ventasRoutes);

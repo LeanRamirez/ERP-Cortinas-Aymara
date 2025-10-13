@@ -231,6 +231,171 @@ class PDFService {
   }
 
   /**
+   * Genera un nombre de archivo simple basado en ID
+   * @param {number|string} presupuestoId - ID del presupuesto
+   * @returns {string} - Nombre del archivo
+   */
+  generarNombreArchivoSimple(presupuestoId) {
+    return `presupuesto_${presupuestoId}.pdf`;
+  }
+
+  /**
+   * Genera PDF de presupuesto con nombre específico basado en ID
+   * @param {Object} presupuesto - Datos del presupuesto completo
+   * @returns {Object} - Información del archivo generado
+   */
+  async generarPresupuestoPDFPorId(presupuesto) {
+    try {
+      // Validar datos requeridos
+      this.validarDatosPresupuesto(presupuesto);
+
+      // Procesar los datos para el template
+      const datosTemplate = this.procesarDatosTemplateDesdeDB(presupuesto);
+
+      // Cargar y compilar el template HTML
+      const htmlContent = await this.compilarTemplate('presupuesto_v1.html', datosTemplate);
+
+      // Generar nombre de archivo basado en ID
+      const nombreArchivo = this.generarNombreArchivoSimple(presupuesto.id);
+
+      // Asegurar que la carpeta de destino existe
+      await fs.mkdir(this.publicPath, { recursive: true });
+
+      // Verificar si el archivo ya existe
+      const rutaArchivo = path.join(this.publicPath, nombreArchivo);
+      try {
+        await fs.access(rutaArchivo);
+        // Archivo ya existe
+        const urlPublica = `${this.baseUrl}/public/pdfs/${nombreArchivo}`;
+        return {
+          success: true,
+          archivo: {
+            nombre: nombreArchivo,
+            ruta: rutaArchivo,
+            url: urlPublica
+          },
+          mensaje: 'PDF ya existía, reutilizado',
+          cached: true
+        };
+      } catch {
+        // Archivo no existe, continuar con generación
+      }
+
+      // Convertir HTML a PDF
+      const rutaArchivoGenerado = await this.convertirHTMLaPDF(htmlContent, nombreArchivo);
+
+      // Generar URL pública
+      const urlPublica = `${this.baseUrl}/public/pdfs/${nombreArchivo}`;
+
+      return {
+        success: true,
+        archivo: {
+          nombre: nombreArchivo,
+          ruta: rutaArchivoGenerado,
+          url: urlPublica
+        },
+        mensaje: 'PDF generado exitosamente',
+        cached: false
+      };
+
+    } catch (error) {
+      console.error('Error generando PDF por ID:', error);
+      throw new Error(`Error al generar PDF: ${error.message}`);
+    }
+  }
+
+  /**
+   * Procesa datos de presupuesto desde la base de datos para el template
+   * @param {Object} presupuesto - Datos del presupuesto desde DB
+   * @returns {Object} - Datos procesados para template
+   */
+  procesarDatosTemplateDesdeDB(presupuesto) {
+    // Formatear moneda argentina
+    const formatearMoneda = (valor) => {
+      return new Intl.NumberFormat('es-AR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(valor);
+    };
+
+    // Formatear fecha argentina
+    const formatearFecha = (fecha) => {
+      return new Date(fecha).toLocaleDateString('es-AR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    };
+
+    // Procesar items (compatible con el esquema de DB actual)
+    const itemsProcesados = presupuesto.items?.length > 0 ? presupuesto.items.map(item => ({
+      descripcion: item.descripcion,
+      cantidad: item.cantidad,
+      precio_unitario: formatearMoneda(item.precioUnitario),
+      total_item: formatearMoneda(item.cantidad * item.precioUnitario)
+    })) : [{
+      descripcion: presupuesto.descripcion || 'Servicio',
+      cantidad: 1,
+      precio_unitario: formatearMoneda(presupuesto.valor || 0),
+      total_item: formatearMoneda(presupuesto.valor || 0)
+    }];
+
+    // Calcular subtotal
+    const subtotal = presupuesto.items?.length > 0 ? 
+      presupuesto.items.reduce((sum, item) => sum + (item.cantidad * item.precioUnitario), 0) :
+      presupuesto.valor || 0;
+
+    return {
+      numero_presupuesto: `PRES-${presupuesto.id}`,
+      fecha_presupuesto: formatearFecha(presupuesto.fecha || presupuesto.createdAt || new Date()),
+      nombre_emisor: 'Cortinas Aymara',
+      telefono_emisor: '',
+      direccion_emisor: '',
+      nombre_cliente: presupuesto.clienteNombre || presupuesto.cliente?.nombre || 'Cliente',
+      cuil_cuit_cliente: '',
+      direccion_cliente: presupuesto.cliente?.direccion || '',
+      telefono_cliente: presupuesto.clienteTelefono || presupuesto.cliente?.telefono || '',
+      items: itemsProcesados,
+      subtotal: formatearMoneda(subtotal),
+      total_final: formatearMoneda(presupuesto.valor || subtotal),
+      comentarios_adicionales: '',
+      comentarios: presupuesto.descripcion || '',
+      forma_pago: 'A convenir'
+    };
+  }
+
+  /**
+   * Valida datos de presupuesto desde DB
+   * @param {Object} presupuesto - Datos del presupuesto desde DB
+   */
+  validarDatosPresupuesto(presupuesto) {
+    const camposRequeridos = [
+      { campo: 'id', valor: presupuesto.id },
+      { campo: 'nombre_cliente', valor: presupuesto.clienteNombre || presupuesto.cliente?.nombre }
+    ];
+
+    for (const { campo, valor } of camposRequeridos) {
+      if (!valor) {
+        throw new Error(`Campo requerido faltante: ${campo}`);
+      }
+    }
+
+    // Validar que tenga valor o items
+    if (!presupuesto.valor && (!presupuesto.items || presupuesto.items.length === 0)) {
+      throw new Error('El presupuesto debe tener un valor o items definidos');
+    }
+
+    // Si tiene items, validar items
+    if (presupuesto.items && presupuesto.items.length > 0) {
+      presupuesto.items.forEach((item, index) => {
+        if (!item.descripcion || !item.cantidad || !item.precioUnitario) {
+          throw new Error(`Item ${index + 1} tiene campos faltantes`);
+        }
+      });
+    }
+  }
+
+  /**
    * Formatea un número como moneda
    * @param {number} valor - Valor a formatear
    * @returns {string} - Valor formateado

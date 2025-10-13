@@ -1,5 +1,5 @@
 import express from "express";
-import { obtenerConfiguracionEnvios, actualizarConfiguracionEnvios, probarEnvioEmail, probarEnvioWhatsApp } from "./configuracion.controller.js";
+import { obtenerConfiguracionEnvios, actualizarConfiguracionEnvios, probarEnvioEmail, probarEnvioWhatsApp, verificarConexionSMTP, limpiarDatosCorruptos, limpiarCredencialesCorruptas } from "./configuracion.controller.js";
 import { requireAdmin, auditLog } from "../../middleware/auth.js";
 
 const router = express.Router();
@@ -51,6 +51,43 @@ router.post(
   requireAdmin,
   auditLog('TEST_WHATSAPP'),
   probarEnvioWhatsApp
+);
+
+/**
+ * POST /config/envios/verify-smtp
+ * Verifica la conexión SMTP sin enviar emails
+ * Requiere autenticación de administrador
+ */
+router.post(
+  '/envios/verify-smtp',
+  requireAdmin,
+  auditLog('VERIFY_SMTP'),
+  verificarConexionSMTP
+);
+
+/**
+ * POST /config/envios/cleanup-corrupted
+ * Limpia datos cifrados corruptos en la base de datos
+ * Requiere autenticación de administrador
+ */
+router.post(
+  '/envios/cleanup-corrupted',
+  requireAdmin,
+  auditLog('CLEANUP_CORRUPTED'),
+  limpiarDatosCorruptos
+);
+
+/**
+ * DELETE /config/envios/credenciales-corruptas
+ * Endpoint seguro para limpiar credenciales cifradas corruptas
+ * Elimina los campos: smtpUsername_enc, smtpPassword_enc, whatsappPhoneNumberId_enc, whatsappToken_enc
+ * Requiere autenticación de administrador
+ */
+router.delete(
+  '/envios/credenciales-corruptas',
+  requireAdmin,
+  auditLog('CLEAN_CORRUPTED_CREDENTIALS'),
+  limpiarCredencialesCorruptas
 );
 
 export default router;

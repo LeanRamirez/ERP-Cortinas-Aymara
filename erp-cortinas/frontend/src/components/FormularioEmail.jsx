@@ -2,47 +2,56 @@ import React, { useState, useEffect } from 'react';
 import styles from '../styles/FormularioConfiguracion.module.css';
 
 const FormularioEmail = ({ configuracion, onGuardar, onProbar, saving }) => {
+  // Estado del formulario
   const [formData, setFormData] = useState({
     fromName: '',
     fromEmail: '',
-    host: '',
-    port: 587,
-    secureTLS: true,
-    replyTo: '',
     smtpUsername: '',
-    smtpPassword: ''
+    smtpPassword: '',
+    host: '',
+    port: '',
+    secureTLS: false,
+    replyTo: ''
   });
 
   const [errors, setErrors] = useState({});
   const [probando, setProbando] = useState(false);
   const [emailPrueba, setEmailPrueba] = useState('');
+  const [asuntoPrueba, setAsuntoPrueba] = useState('');
+  const [mensajePrueba, setMensajePrueba] = useState('');
   const [mensaje, setMensaje] = useState(null);
+  const [camposModificados, setCamposModificados] = useState(new Set());
 
-  // Cargar datos de configuración cuando cambie
+  // Cargar configuración existente
   useEffect(() => {
     if (configuracion) {
       setFormData({
         fromName: configuracion.fromName || '',
         fromEmail: configuracion.fromEmail || '',
-        host: configuracion.host || '',
-        port: configuracion.port || 587,
-        secureTLS: configuracion.secureTLS !== undefined ? configuracion.secureTLS : true,
-        replyTo: configuracion.replyTo || '',
-        // Los campos sensibles se dejan vacíos si están enmascarados
         smtpUsername: configuracion.smtpUsername_enc === '***masked***' ? '' : configuracion.smtpUsername || '',
-        smtpPassword: configuracion.smtpPassword_enc === '***masked***' ? '' : configuracion.smtpPassword || ''
+        smtpPassword: configuracion.smtpPassword_enc === '***masked***' ? '' : configuracion.smtpPassword || '',
+        host: configuracion.host || '',
+        port: configuracion.port || '',
+        secureTLS: configuracion.secureTLS || false,
+        replyTo: configuracion.replyTo || ''
       });
     }
   }, [configuracion]);
 
+  // Manejar cambios en los campos del formulario
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    const newValue = type === 'checkbox' ? checked : value;
+    
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: newValue
     }));
-    
-    // Limpiar error del campo cuando el usuario empiece a escribir
+
+    // Marcar campo como modificado
+    setCamposModificados(prev => new Set([...prev, name]));
+
+    // Limpiar error del campo
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -51,39 +60,53 @@ const FormularioEmail = ({ configuracion, onGuardar, onProbar, saving }) => {
     }
   };
 
+  // Validar formulario
   const validarFormulario = () => {
     const nuevosErrores = {};
 
-    if (!formData.fromEmail.trim()) {
-      nuevosErrores.fromEmail = 'El email es requerido';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.fromEmail)) {
-      nuevosErrores.fromEmail = 'Email inválido';
+    // Validaciones de campos requeridos
+    if (!formData.fromName || !formData.fromName.trim()) {
+      nuevosErrores.fromName = 'El nombre del remitente es requerido';
     }
 
-    if (!formData.host.trim()) {
-      nuevosErrores.host = 'El host SMTP es requerido';
+    if (!formData.fromEmail || !formData.fromEmail.trim()) {
+      nuevosErrores.fromEmail = 'El email del remitente es requerido';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.fromEmail.trim())) {
+      nuevosErrores.fromEmail = 'Ingresa un email válido';
     }
 
-    if (!formData.port || formData.port < 1 || formData.port > 65535) {
-      nuevosErrores.port = 'Puerto inválido (1-65535)';
-    }
-
-    if (!formData.smtpUsername.trim()) {
+    if (!formData.smtpUsername || !formData.smtpUsername.trim()) {
       nuevosErrores.smtpUsername = 'El usuario SMTP es requerido';
     }
 
-    if (!formData.smtpPassword.trim()) {
+    if (!formData.smtpPassword || !formData.smtpPassword.trim()) {
       nuevosErrores.smtpPassword = 'La contraseña SMTP es requerida';
     }
 
-    if (formData.replyTo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.replyTo)) {
-      nuevosErrores.replyTo = 'Email de respuesta inválido';
+    if (!formData.host || !formData.host.trim()) {
+      nuevosErrores.host = 'El servidor SMTP es requerido';
+    }
+
+    // Validar puerto (campo numérico) - NO usar .trim() en números
+    if (!formData.port || formData.port === '') {
+      nuevosErrores.port = 'El puerto es requerido';
+    } else {
+      const puerto = parseInt(formData.port, 10);
+      if (isNaN(puerto) || puerto < 1 || puerto > 65535) {
+        nuevosErrores.port = 'El puerto debe estar entre 1 y 65535';
+      }
+    }
+
+    // Validar replyTo si está presente
+    if (formData.replyTo && formData.replyTo.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.replyTo.trim())) {
+      nuevosErrores.replyTo = 'Ingresa un email válido para respuesta';
     }
 
     setErrors(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
   };
 
+  // Manejar envío del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -91,18 +114,40 @@ const FormularioEmail = ({ configuracion, onGuardar, onProbar, saving }) => {
       return;
     }
 
-    // Preparar datos para enviar (solo campos que no están vacíos)
+    // Preparar datos para enviar (solo campos modificados o todos si es la primera vez)
     const datosParaEnviar = {};
-    Object.keys(formData).forEach(key => {
-      if (formData[key] !== '' && formData[key] !== null && formData[key] !== undefined) {
-        datosParaEnviar[key] = formData[key];
-      }
-    });
+    
+    if (camposModificados.size === 0) {
+      // Primera vez, enviar todos los campos no vacíos
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== '' && formData[key] !== null && formData[key] !== undefined) {
+          // Convertir port a número para evitar error de Prisma
+          if (key === 'port') {
+            datosParaEnviar[key] = parseInt(formData[key], 10);
+          } else {
+            datosParaEnviar[key] = formData[key];
+          }
+        }
+      });
+    } else {
+      // Solo campos modificados
+      camposModificados.forEach(key => {
+        if (formData[key] !== '' && formData[key] !== null && formData[key] !== undefined) {
+          // Convertir port a número para evitar error de Prisma
+          if (key === 'port') {
+            datosParaEnviar[key] = parseInt(formData[key], 10);
+          } else {
+            datosParaEnviar[key] = formData[key];
+          }
+        }
+      });
+    }
 
     const resultado = await onGuardar(datosParaEnviar);
     
     if (resultado.success) {
       setMensaje({ tipo: 'success', texto: resultado.message });
+      setCamposModificados(new Set()); // Limpiar campos modificados
       setTimeout(() => setMensaje(null), 4000);
     } else {
       setMensaje({ tipo: 'error', texto: resultado.message });
@@ -110,6 +155,7 @@ const FormularioEmail = ({ configuracion, onGuardar, onProbar, saving }) => {
     }
   };
 
+  // Manejar prueba de email
   const handleProbarEmail = async () => {
     if (!emailPrueba.trim()) {
       setMensaje({ tipo: 'error', texto: 'Ingresa un email para la prueba' });
@@ -118,21 +164,25 @@ const FormularioEmail = ({ configuracion, onGuardar, onProbar, saving }) => {
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailPrueba)) {
-      setMensaje({ tipo: 'error', texto: 'Email de prueba inválido' });
+      setMensaje({ tipo: 'error', texto: 'Ingresa un email válido' });
       setTimeout(() => setMensaje(null), 4000);
       return;
     }
 
     setProbando(true);
-    const resultado = await onProbar({
+    const datosEmail = {
       to: emailPrueba,
-      subject: 'Prueba de configuración SMTP',
-      message: 'Este es un mensaje de prueba desde el ERP Cortinas Aymara.'
-    });
+      ...(asuntoPrueba.trim() && { subject: asuntoPrueba }),
+      ...(mensajePrueba.trim() && { message: mensajePrueba })
+    };
+
+    const resultado = await onProbar(datosEmail);
 
     if (resultado.success) {
       setMensaje({ tipo: 'success', texto: resultado.message });
       setEmailPrueba('');
+      setAsuntoPrueba('');
+      setMensajePrueba('');
     } else {
       setMensaje({ tipo: 'error', texto: resultado.message });
     }
@@ -144,20 +194,24 @@ const FormularioEmail = ({ configuracion, onGuardar, onProbar, saving }) => {
   return (
     <div className={styles.formularioContainer}>
       <form onSubmit={handleSubmit} className={styles.formulario}>
+        {/* Campos de configuración */}
         <div className={styles.seccionCampos}>
           <div className={styles.fila}>
             <div className={styles.campo}>
-              <label htmlFor="fromName">Nombre del remitente:</label>
+              <label htmlFor="fromName">Nombre del remitente: *</label>
               <input
                 type="text"
                 id="fromName"
                 name="fromName"
                 value={formData.fromName}
                 onChange={handleChange}
-                className={styles.input}
-                placeholder="Ej: Cortinas Aymara"
+                className={`${styles.input} ${errors.fromName ? styles.inputError : ''}`}
+                placeholder="Cortinas Aymara"
+                required
               />
+              {errors.fromName && <span className={styles.error}>{errors.fromName}</span>}
             </div>
+
             <div className={styles.campo}>
               <label htmlFor="fromEmail">Email del remitente: *</label>
               <input
@@ -176,38 +230,6 @@ const FormularioEmail = ({ configuracion, onGuardar, onProbar, saving }) => {
 
           <div className={styles.fila}>
             <div className={styles.campo}>
-              <label htmlFor="host">Servidor SMTP: *</label>
-              <input
-                type="text"
-                id="host"
-                name="host"
-                value={formData.host}
-                onChange={handleChange}
-                className={`${styles.input} ${errors.host ? styles.inputError : ''}`}
-                placeholder="smtp.gmail.com"
-                required
-              />
-              {errors.host && <span className={styles.error}>{errors.host}</span>}
-            </div>
-            <div className={styles.campo}>
-              <label htmlFor="port">Puerto: *</label>
-              <input
-                type="number"
-                id="port"
-                name="port"
-                value={formData.port}
-                onChange={handleChange}
-                className={`${styles.input} ${errors.port ? styles.inputError : ''}`}
-                min="1"
-                max="65535"
-                required
-              />
-              {errors.port && <span className={styles.error}>{errors.port}</span>}
-            </div>
-          </div>
-
-          <div className={styles.fila}>
-            <div className={styles.campo}>
               <label htmlFor="smtpUsername">Usuario SMTP: *</label>
               <input
                 type="text"
@@ -221,6 +243,7 @@ const FormularioEmail = ({ configuracion, onGuardar, onProbar, saving }) => {
               />
               {errors.smtpUsername && <span className={styles.error}>{errors.smtpUsername}</span>}
             </div>
+
             <div className={styles.campo}>
               <label htmlFor="smtpPassword">Contraseña SMTP: *</label>
               <input
@@ -230,16 +253,52 @@ const FormularioEmail = ({ configuracion, onGuardar, onProbar, saving }) => {
                 value={formData.smtpPassword}
                 onChange={handleChange}
                 className={`${styles.input} ${errors.smtpPassword ? styles.inputError : ''}`}
-                placeholder="••••••••••••"
+                placeholder="••••••••••••••••"
                 required
               />
               {errors.smtpPassword && <span className={styles.error}>{errors.smtpPassword}</span>}
+              <small className={styles.ayuda}>Para Gmail, usa una contraseña de aplicación</small>
             </div>
           </div>
 
           <div className={styles.fila}>
             <div className={styles.campo}>
-              <label htmlFor="replyTo">Email de respuesta:</label>
+              <label htmlFor="host">Servidor SMTP: *</label>
+              <input
+                type="text"
+                id="host"
+                name="host"
+                value={formData.host}
+                onChange={handleChange}
+                className={`${styles.input} ${errors.host ? styles.inputError : ''}`}
+                placeholder="smtp.gmail.com"
+                required
+              />
+              {errors.host && <span className={styles.error}>{errors.host}</span>}
+            </div>
+
+            <div className={styles.campo}>
+              <label htmlFor="port">Puerto: *</label>
+              <input
+                type="number"
+                id="port"
+                name="port"
+                value={formData.port}
+                onChange={handleChange}
+                className={`${styles.input} ${errors.port ? styles.inputError : ''}`}
+                placeholder="587"
+                min="1"
+                max="65535"
+                required
+              />
+              {errors.port && <span className={styles.error}>{errors.port}</span>}
+              <small className={styles.ayuda}>587 para TLS, 465 para SSL, 25 para no seguro</small>
+            </div>
+          </div>
+
+          <div className={styles.fila}>
+            <div className={styles.campo}>
+              <label htmlFor="replyTo">Email de respuesta (opcional):</label>
               <input
                 type="email"
                 id="replyTo"
@@ -251,6 +310,7 @@ const FormularioEmail = ({ configuracion, onGuardar, onProbar, saving }) => {
               />
               {errors.replyTo && <span className={styles.error}>{errors.replyTo}</span>}
             </div>
+
             <div className={styles.campo}>
               <div className={styles.checkboxContainer}>
                 <input
@@ -263,41 +323,87 @@ const FormularioEmail = ({ configuracion, onGuardar, onProbar, saving }) => {
                 />
                 <label htmlFor="secureTLS">Usar TLS seguro</label>
               </div>
+              <small className={styles.ayuda}>Recomendado para la mayoría de proveedores</small>
             </div>
           </div>
         </div>
 
+        {/* Información importante */}
+        <div className={styles.seccionInfo}>
+          <h4>📋 Información importante</h4>
+          <ul className={styles.listaInfo}>
+            <li>Para Gmail: Habilita la verificación en 2 pasos y usa una contraseña de aplicación</li>
+            <li>Puerto 587 con TLS es la configuración más común y segura</li>
+            <li>Verifica que tu proveedor de email permita SMTP</li>
+            <li>Los datos sensibles se cifran automáticamente al guardar</li>
+          </ul>
+        </div>
+
+        {/* Sección de prueba */}
         <div className={styles.seccionPrueba}>
           <h4>Probar configuración</h4>
-          <div className={styles.filaPrueba}>
-            <input
-              type="email"
-              value={emailPrueba}
-              onChange={(e) => setEmailPrueba(e.target.value)}
-              placeholder="email@ejemplo.com"
+          <div className={styles.fila}>
+            <div className={styles.campo}>
+              <label htmlFor="emailPrueba">Email de destino: *</label>
+              <input
+                type="email"
+                id="emailPrueba"
+                value={emailPrueba}
+                onChange={(e) => setEmailPrueba(e.target.value)}
+                placeholder="test@ejemplo.com"
+                className={styles.input}
+              />
+            </div>
+            <div className={styles.campo}>
+              <label htmlFor="asuntoPrueba">Asunto (opcional):</label>
+              <input
+                type="text"
+                id="asuntoPrueba"
+                value={asuntoPrueba}
+                onChange={(e) => setAsuntoPrueba(e.target.value)}
+                placeholder="Prueba de configuración SMTP"
+                className={styles.input}
+                maxLength="200"
+              />
+            </div>
+          </div>
+          <div className={styles.campo}>
+            <label htmlFor="mensajePrueba">Mensaje personalizado (opcional):</label>
+            <textarea
+              id="mensajePrueba"
+              value={mensajePrueba}
+              onChange={(e) => setMensajePrueba(e.target.value)}
+              placeholder="Mensaje de prueba personalizado..."
               className={styles.input}
+              rows="3"
+              maxLength="1000"
+              style={{ resize: 'vertical', minHeight: '80px' }}
             />
+          </div>
+          <div className={styles.filaPrueba}>
             <button
               type="button"
               onClick={handleProbarEmail}
               disabled={probando}
               className={styles.botonProbar}
             >
-              {probando ? 'Enviando...' : 'Probar Email'}
+              {probando ? 'Enviando...' : 'Probar envío de email'}
             </button>
           </div>
         </div>
 
+        {/* Botones del formulario */}
         <div className={styles.botonesFormulario}>
           <button
             type="submit"
             disabled={saving}
             className={styles.botonGuardar}
           >
-            {saving ? 'Guardando...' : 'Guardar Configuración'}
+            {saving ? 'Guardando...' : 'Guardar configuración'}
           </button>
         </div>
 
+        {/* Mensajes de éxito/error */}
         {mensaje && (
           <div className={`${styles.mensaje} ${styles[mensaje.tipo]}`}>
             {mensaje.texto}

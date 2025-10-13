@@ -466,12 +466,78 @@
 }
 
 .acciones {
-  display: flex;
-  gap: 8px;
   margin-top: 20px;
   padding-top: 15px;
   border-top: 1px solid #e0e0e0;
+}
+
+.accionesEnvio {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  justify-content: center;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.accionesPrincipales {
+  display: flex;
+  gap: 8px;
   flex-wrap: wrap;
+}
+
+/* Botones de envío */
+.btnVerPdf,
+.btnEnviarEmail,
+.btnEnviarWhatsApp {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btnVerPdf {
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  color: white;
+}
+
+.btnVerPdf:hover {
+  background: linear-gradient(135deg, #c82333, #bd2130);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+.btnEnviarEmail {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+}
+
+.btnEnviarEmail:hover {
+  background: linear-gradient(135deg, #0056b3, #004085);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.btnEnviarWhatsApp {
+  background: linear-gradient(135deg, #25D366, #128C7E);
+  color: white;
+}
+
+.btnEnviarWhatsApp:hover {
+  background: linear-gradient(135deg, #128C7E, #0d7377);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(37, 211, 102, 0.3);
 }
 
 .btnEditar {
@@ -547,8 +613,21 @@
     flex-direction: column;
   }
   
-  .acciones {
+  .accionesEnvio {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .accionesPrincipales {
     flex-direction: column;
+  }
+
+  .btnVerPdf,
+  .btnEnviarEmail,
+  .btnEnviarWhatsApp {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
   }
   
   .encabezadoPresupuesto {
