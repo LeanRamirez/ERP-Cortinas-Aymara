@@ -232,6 +232,101 @@ Content-Type: application/json
 }
 ```
 
+### POST /presupuestos/:id/enviar-email
+**Descripción**: Envía un presupuesto por email con el PDF adjunto
+
+**Request**:
+```http
+POST /api/presupuestos/1/enviar-email
+Content-Type: application/json
+
+{
+  "to": "cliente@email.com (required)",
+  "subject": "string (optional)",
+  "message": "string (optional)"
+}
+```
+
+**Parámetros**:
+- `to`: Email de destino (requerido, debe ser un email válido)
+- `subject`: Asunto del email (opcional, default: "Presupuesto #[id] - [descripción]")
+- `message`: Mensaje del email (opcional, incluye mensaje predeterminado con datos del presupuesto)
+
+**Funcionalidad**:
+1. Obtiene el presupuesto por ID
+2. Genera el PDF automáticamente si no existe usando `PDFService.generarPresupuestoPDFPorId()`
+3. Envía el email con el PDF adjunto usando `EmailService.sendEmail()`
+4. Incluye mensaje personalizado con datos del presupuesto formateados
+
+**Response exitosa (200)**:
+```json
+{
+  "success": true,
+  "message": "Presupuesto enviado por email con éxito"
+}
+```
+
+**Errores**:
+- **400**: Validación de datos
+  ```json
+  {
+    "success": false,
+    "error": "El campo 'to' es requerido" | "Email de destino inválido"
+  }
+  ```
+
+- **404**: Presupuesto no encontrado
+  ```json
+  {
+    "success": false,
+    "error": "Presupuesto no encontrado"
+  }
+  ```
+
+- **500**: Error generando PDF o enviando email
+  ```json
+  {
+    "success": false,
+    "error": "Error al generar el archivo PDF" | "Error al enviar el email",
+    "details": "Mensaje específico del error"
+  }
+  ```
+
+**Ejemplos de uso**:
+
+```bash
+# curl
+curl -X POST http://localhost:4000/api/presupuestos/1/enviar-email \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "cliente@email.com",
+    "subject": "Su presupuesto de cortinas",
+    "message": "Estimado cliente, adjuntamos el presupuesto solicitado."
+  }'
+```
+
+```javascript
+// JavaScript/Frontend
+const response = await fetch('/api/presupuestos/1/enviar-email', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    to: 'cliente@email.com',
+    subject: 'Su presupuesto de cortinas',
+    message: 'Estimado cliente, adjuntamos el presupuesto solicitado.'
+  })
+});
+
+const result = await response.json();
+if (result.success) {
+  console.log('Email enviado exitosamente');
+} else {
+  console.error('Error:', result.error);
+}
+```
+
 ### POST /presupuestos/:id/pdf
 **Descripción**: Genera PDF de presupuesto con autodiagnóstico y reutilización de archivos existentes
 
@@ -818,6 +913,111 @@ try {
 } catch (error) {
   console.error('Error:', error.message);
 }
+```
+
+### DELETE /config/envios/credenciales-corruptas
+**[ENDPOINT SEGURO - ADMIN]** Limpia las credenciales cifradas corruptas que pueden estar causando errores en el sistema de cifrado.
+
+**Autenticación**: Requiere header X-Admin-Key
+
+**Request**:
+```http
+DELETE /api/config/envios/credenciales-corruptas
+X-Admin-Key: <admin_key>
+Content-Type: application/json
+```
+
+**Funcionalidad**:
+- Busca la configuración con ID "default"
+- Establece como null los campos: `smtpUsername_enc`, `smtpPassword_enc`, `whatsappPhoneNumberId_enc`, `whatsappToken_enc`
+- Registra la acción en logs de auditoría detallados
+
+**Response exitosa (200)**:
+```json
+{
+  "success": true,
+  "message": "Credenciales cifradas corruptas limpiadas correctamente",
+  "detalles": {
+    "configuracionId": "default",
+    "camposLimpiados": [
+      "smtpUsername_enc",
+      "smtpPassword_enc", 
+      "whatsappPhoneNumberId_enc",
+      "whatsappToken_enc"
+    ],
+    "timestamp": "2025-01-10T16:50:49.123Z"
+  }
+}
+```
+
+**Response si no se encuentra configuración (404)**:
+```json
+{
+  "success": false,
+  "message": "No se encontró configuración con ID \"default\" para limpiar",
+  "detalles": {
+    "configuracionId": "default",
+    "encontrada": false,
+    "timestamp": "2025-01-10T16:50:49.123Z"
+  }
+}
+```
+
+**Errores**:
+- **401**: No autenticado
+  ```json
+  {
+    "error": "Acceso no autorizado",
+    "message": "Se requiere autenticación de administrador"
+  }
+  ```
+
+- **403**: Sin permisos
+  ```json
+  {
+    "error": "Acceso denegado", 
+    "message": "Credenciales de administrador inválidas"
+  }
+  ```
+
+- **500**: Error interno
+  ```json
+  {
+    "success": false,
+    "error": "Error interno del servidor",
+    "message": "Error interno del servidor al limpiar credenciales",
+    "timestamp": "2025-01-10T16:50:49.123Z"
+  }
+  ```
+
+**Casos de uso**:
+- Recuperación cuando las credenciales quedan mal guardadas debido a errores de cifrado
+- Limpieza después de cambios en claves de cifrado que corrompen los datos existentes
+- Reseteo completo de credenciales cuando el sistema de cifrado falla
+
+**Funcionalidades de seguridad**:
+- Registra IP del administrador que ejecuta la acción
+- Logs detallados sin exponer datos sensibles
+- Auditoría completa de la operación
+- Timestamp preciso de la operación
+
+**Ejemplos de uso**:
+
+```bash
+# curl
+curl -X DELETE http://localhost:4000/api/config/envios/credenciales-corruptas \
+  -H "X-Admin-Key: admin-key-default" \
+  -H "Content-Type: application/json"
+```
+
+```powershell
+# PowerShell
+$headers = @{
+    "X-Admin-Key" = "admin-key-default"
+    "Content-Type" = "application/json"
+}
+
+Invoke-RestMethod -Uri "http://localhost:4000/api/config/envios/credenciales-corruptas" -Method DELETE -Headers $headers
 ```
 
 ## 🔒 Autenticación (Preparado)
